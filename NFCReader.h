@@ -1,5 +1,7 @@
 #include "Arduino.h"
 
+#include "debug.h"
+
 #ifndef NFC_READER_H
 #define NFC_READER_H
 
@@ -11,7 +13,7 @@
 #define NPP_CLIENT  1
 #define NPP_SERVER  2
 
-enum RESULTS 
+enum RESULTS
 {
    RESULT_SUCCESS = 0x00000001,
    GEN_ERROR = 0x80000000,
@@ -35,7 +37,7 @@ enum RESULTS
    INVALID_RESPONSE,
    INVALID_POSTAMBLE,
    CLIENT_REQ_ERROR
-        
+
 };
 
 
@@ -47,7 +49,7 @@ public:
    virtual void initializeReader() = 0;
    virtual uint32_t SAMConfig(void) = 0;
    virtual uint32_t getFirmwareVersion(void) = 0;
-   
+
    virtual uint32_t readPassiveTargetID(uint8_t cardbaudrate) = 0;
    virtual uint32_t authenticateBlock(	uint8_t cardnumber /*1 or 2*/,
 				uint32_t cid /*Card NUID*/,
@@ -56,34 +58,34 @@ public:
 				uint8_t * keys) = 0;
 
    virtual uint32_t readMemoryBlock(uint8_t cardnumber /*1 or 2*/,
-                            uint8_t blockaddress /*0 to 63*/, 
+                            uint8_t blockaddress /*0 to 63*/,
                             uint8_t * block) = 0;
-                            
+
    virtual uint32_t writeMemoryBlock(uint8_t cardnumber /*1 or 2*/,
-                             uint8_t blockaddress /*0 to 63*/, 
-                             uint8_t * block);	
-   
-   virtual uint32_t configurePeerAsInitiator(uint8_t baudrate) = 0;  
-   virtual uint32_t configurePeerAsTarget(uint8_t type) = 0;   
-   
-   
-   virtual uint32_t initiatorTxRxData(uint8_t *DataOut, 
-                                       uint32_t dataSize, 
+                             uint8_t blockaddress /*0 to 63*/,
+                             uint8_t * block);
+
+   virtual uint32_t configurePeerAsInitiator(uint8_t baudrate) = 0;
+   virtual uint32_t configurePeerAsTarget(uint8_t type) = 0;
+
+
+   virtual uint32_t initiatorTxRxData(uint8_t *DataOut,
+                                       uint32_t dataSize,
                                        uint8_t *response,
-                                       boolean debug = false) = 0;
-   
-   virtual uint32_t targetRxData(uint8_t *response, boolean debug = false) = 0;
-   virtual uint32_t targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug = false) = 0;                      
-                                                
+                                       boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
+
+   virtual uint32_t targetRxData(uint8_t *response, boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
+   virtual uint32_t targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
+
    virtual uint32_t getTargetStatus(uint8_t *statusOut) = 0;
-                       
-	 virtual uint32_t sendCommandCheckAck(uint8_t *cmd, 
-                              uint8_t cmdlen,                               
+
+	 virtual uint32_t sendCommandCheckAck(uint8_t *cmd,
+                              uint8_t cmdlen,
                               uint16_t timeout = 1000,
-                              boolean debug = false) = 0;	
-   
-   virtual boolean isTargetReleasedError(uint32_t result) = 0;   
-      
+                              boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
+
+   virtual boolean isTargetReleasedError(uint32_t result) = 0;
+
 };
 
 

@@ -3,6 +3,8 @@
 #ifndef NFC_LINK_LAYER_H
 #define NFC_LINK_LAYER_H
 
+#include "debug.h"
+
 #define SYMM_PTYPE                    0x00
 #define PAX_PTYPE                     0x01
 #define AGGREGATE_PTYPE               0x02
@@ -35,12 +37,12 @@ struct PARAMETER_DESCR {
 
 struct PDU {
 public:
-   uint8_t field[2]; 
+   uint8_t field[2];
    PARAMETER_DESCR  params;
 
 
    PDU();
-   
+
    uint8_t getDSAP();
    uint8_t getSSAP();
    uint8_t getPTYPE();
@@ -55,15 +57,15 @@ class NFCLinkLayer {
 public:
    NFCLinkLayer(NFCReader *nfcReader);
    ~NFCLinkLayer();
-   
-   uint32_t openNPPServerLink(boolean debug = false);
+
+   uint32_t openNPPServerLink(boolean debug = DEBUG_ENABLE_NFC_LINK_LAYER);
    uint32_t closeNPPServerLink();
-      
-   uint32_t openNPPClientLink(boolean debug = false);
+
+   uint32_t openNPPClientLink(boolean debug = DEBUG_ENABLE_NFC_LINK_LAYER);
    uint32_t closeNPPClientLink();
-   
-   uint32_t serverLinkRxData(uint8_t *&Data, boolean debug = false);
-   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len, boolean debug = false);
+
+   uint32_t serverLinkRxData(uint8_t *&Data, boolean debug = DEBUG_ENABLE_NFC_LINK_LAYER);
+   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len, boolean debug = DEBUG_ENABLE_NFC_LINK_LAYER);
 private:
    NFCReader *_nfcReader;
    uint8_t DSAP;
