@@ -16,6 +16,7 @@
 enum RESULTS
 {
    RESULT_SUCCESS = 0x00000001,
+
    GEN_ERROR = 0x80000000,
    CONFIGURE_HARDWARE_ERROR,
    NFC_READER_COMMAND_FAILURE,
@@ -74,8 +75,8 @@ public:
                                        uint8_t *response,
                                        boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
 
-   virtual uint32_t targetRxData(uint8_t *response, boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
-   virtual uint32_t targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
+   virtual uint32_t targetRxData(uint8_t *response, uint16_t timeout = 1000, boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
+   virtual uint32_t targetTxData(uint8_t *DataOut, uint32_t dataSize, uint16_t timeout = 1000, boolean debug = DEBUG_ENABLE_NFC_READER) = 0;
 
    virtual uint32_t getTargetStatus(uint8_t *statusOut) = 0;
 

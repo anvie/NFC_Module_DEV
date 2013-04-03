@@ -40,7 +40,6 @@ PN532::PN532(uint8_t cs) : pn532_SPI()
 
 void PN532::begin()
 {
-#if 0
   pn532_SPI.begin();
   /*The mode of the SPI interface should be set at mode0
    	  according to the datasheet of PN532 */
@@ -55,7 +54,6 @@ void PN532::begin()
   pn532_packetbuffer[0] = PN532_FIRMWAREVERSION;
   /*Ignore response!*/
   sendCommandCheckAck(pn532_packetbuffer, 1);
-#endif
 }
 #endif
 
@@ -150,22 +148,6 @@ uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
     // read acknowledgement
     if (!spi_readack(debug)) {
         return SEND_COMMAND_RX_ACK_ERROR;
-    }
-
-    timer = 0;
-
-    // Wait for chip to say its ready!
-    while (readspistatus() != PN532_SPI_READY)
-    {
-        if (timeout != 0)
-        {
-            timer+=10;
-            if (timer > timeout)
-            {
-                return SEND_COMMAND_RX_TIMEOUT_ERROR;
-            }
-        }
-        delay(10);
     }
 
     return RESULT_SUCCESS; // ack'd command
@@ -329,6 +311,23 @@ uint32_t PN532::configurePeerAsTarget(uint8_t type)
         return result;
     }
 
+    // X: wait until PN532 is ready or time out
+    uint16_t timer = 0;
+    uint16_t timeout = 2000;
+    while (readspistatus() != PN532_SPI_READY)
+    {
+        if (timeout != 0)
+        {
+            timer+=10;
+            if (timer > timeout)
+            {
+                Serial.println("Rx timeout");
+                return SEND_COMMAND_RX_TIMEOUT_ERROR;
+            }
+        }
+        delay(10);
+    }
+
     PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *) pn532_packetbuffer;
     return readspicommand(PN532_TGINITASTARGET, response);
 }
@@ -352,13 +351,14 @@ uint32_t PN532::getTargetStatus(uint8_t *DataIn)
     return 0;
 }
 
-uint32_t PN532::targetRxData(uint8_t *DataIn, boolean debug)
+uint32_t PN532::targetRxData(uint8_t *DataIn, uint16_t timeout, boolean debug)
 {
     ///////////////////////////////////// Receiving from Initiator ///////////////////////////
     pn532_packetbuffer[0] = PN532_TGGETDATA;
     uint32_t result = sendCommandCheckAck(pn532_packetbuffer, 1, 1000, debug);
     if (IS_ERROR(result)) {
 #ifndef NDEBUG
+        Serial.println(result, HEX);
         Serial.println(F("SendCommandCheck Ack Failed"));
 #endif
         return NFC_READER_COMMAND_FAILURE;
@@ -366,6 +366,23 @@ uint32_t PN532::targetRxData(uint8_t *DataIn, boolean debug)
 
     // read data packet
     PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *) pn532_packetbuffer;
+
+    // X: wait until PN532 is ready or time out
+    uint16_t timer = 0;
+    timeout = 3000;
+    while (readspistatus() != PN532_SPI_READY)
+    {
+        if (timeout != 0)
+        {
+            timer+=10;
+            if (timer > timeout)
+            {
+                Serial.println("Rx timeout");
+                return SEND_COMMAND_RX_TIMEOUT_ERROR;
+            }
+        }
+        delay(10);
+    }
 
     result = readspicommand(PN532_TGGETDATA, response, debug);
 
@@ -386,7 +403,7 @@ uint32_t PN532::targetRxData(uint8_t *DataIn, boolean debug)
 
 
 
-uint32_t PN532::targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug)
+uint32_t PN532::targetTxData(uint8_t *DataOut, uint32_t dataSize, uint16_t timeout, boolean debug)
 {
     ///////////////////////////////////// Sending to Initiator ///////////////////////////
     pn532_packetbuffer[0] = PN532_TGSETDATA;
@@ -406,6 +423,21 @@ uint32_t PN532::targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug)
     // read data packet
     PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *) pn532_packetbuffer;
 
+    // X: wait until PN532 is ready or time out
+    uint16_t timer = 0;
+    while (readspistatus() != PN532_SPI_READY)
+    {
+        if (timeout != 0)
+        {
+            timer+=10;
+            if (timer > timeout)
+            {
+                Serial.println("Tx timeout");
+                return SEND_COMMAND_TX_TIMEOUT_ERROR;
+            }
+        }
+        delay(10);
+    }
     result = readspicommand(PN532_TGSETDATA, response);
     if (IS_ERROR(result))
     {
@@ -868,6 +900,7 @@ void PN532_CMD_RESPONSE::printResponse()
     Serial.println(len, HEX);
     Serial.print(F("Direction: 0x"));
     Serial.println(direction, HEX);
+
     Serial.print(F("Response Command: 0x"));
     Serial.println(responseCode, HEX);
 

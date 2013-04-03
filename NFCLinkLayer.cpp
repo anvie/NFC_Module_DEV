@@ -30,9 +30,13 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
            Serial.println(F("configurePeerAsTarget() failed"));
        }
        return result;
+   } else {
+        Serial.println(F("configurePeerAsTarget() ok"));
    }
+
    recievedPDU = ( PDU *) DataIn;
-   if (!_nfcReader->targetRxData(DataIn))
+   if (!_nfcReader->targetRxData(DataIn)
+       )
    {
       if (debug)
       {
@@ -103,6 +107,8 @@ uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
             Serial.print(F("configurePeerAsTarget() failed "));
         }
        return result;
+   } else {
+        Serial.println(F("------ configurePeerAsTarget() ok ----------"));
    }
 
    recievedPDU = (PDU *)DataIn;

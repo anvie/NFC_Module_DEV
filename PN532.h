@@ -133,7 +133,7 @@ public:
                               uint8_t * block);
 
     uint32_t configurePeerAsInitiator(uint8_t baudrate);
-    uint32_t configurePeerAsTarget(uint8_t type);
+    uint32_t configurePeerAsTarget(uint8_t type = PN532_TGINITASTARGET);
 
     uint32_t getTargetStatus(uint8_t *response);
 
@@ -149,9 +149,10 @@ public:
 
     uint32_t targetTxData(uint8_t *DataOut,
                           uint32_t dataSize,
+                          uint16_t timeout = 2000,
                           boolean debug = DEBUG_ENABLE_PN532);
 
-    uint32_t targetRxData(uint8_t *response, boolean debug = DEBUG_ENABLE_PN532);
+    uint32_t targetRxData(uint8_t *response, uint16_t timeout = 2000, boolean debug = DEBUG_ENABLE_PN532);
 
     boolean isTargetReleasedError(uint32_t result);
 
