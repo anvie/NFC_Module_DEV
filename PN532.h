@@ -59,7 +59,7 @@
 
 #define PN532_MODE_AS_TARGET (PN532_MODE_PICC_ONLY_OFF | PN532_MODE_DEP_ONLY_OFF | PN532_MODE_PASSIVE_ONLY_OFF)
 
-enum READER_ERRORS 
+enum READER_ERRORS
 {
     TIME_OUT_ERROR = 0x01,
     CRC_ERROR,
@@ -85,21 +85,21 @@ enum READER_ERRORS
     CARD_INACTIVE_ERROR,
     NFCID3_MISMATCH_ERROR,
     OVER_CURRENT_ERROR,
-    DEP_NAD_MISSING,   
+    DEP_NAD_MISSING,
 };
 
 struct PN532_CMD_RESPONSE {
    uint8_t header[2];   // 0x00 0xFF
-   uint8_t len;         
-   uint8_t len_chksum;  // len + len_chksum = 0x00 
+   uint8_t len;
+   uint8_t len_chksum;  // len + len_chksum = 0x00
    uint8_t data_len;
    uint8_t direction;
    uint8_t responseCode;
    uint8_t data[0];
-   
+
    boolean verifyResponse(uint32_t cmdCode);
    void printResponse();
-   
+
 };
 
 class PN532 : public NFCReader {
@@ -108,7 +108,7 @@ public:
 
     uint32_t SAMConfig(void);
     void initializeReader();
-    
+
     uint32_t getFirmwareVersion(void);
     uint32_t readPassiveTargetID(uint8_t cardbaudrate);
     uint32_t authenticateBlock(	uint8_t cardnumber /*1 or 2*/,
@@ -118,45 +118,46 @@ public:
 				uint8_t * keys);
 
     uint32_t readMemoryBlock(uint8_t cardnumber /*1 or 2*/,
-                             uint8_t blockaddress /*0 to 63*/, 
+                             uint8_t blockaddress /*0 to 63*/,
                              uint8_t * block);
-                             
+
     uint32_t writeMemoryBlock(uint8_t cardnumber /*1 or 2*/,
-                              uint8_t blockaddress /*0 to 63*/, 
+                              uint8_t blockaddress /*0 to 63*/,
                               uint8_t * block);
 
-    uint32_t configurePeerAsInitiator(uint8_t baudrate); 
-    uint32_t configurePeerAsTarget(uint8_t type); 
-    
+    uint32_t configurePeerAsInitiator(uint8_t baudrate);
+    uint32_t configurePeerAsTarget(uint8_t type);
+
     uint32_t getTargetStatus(uint8_t *response);
 
-    uint32_t sendCommandCheckAck(uint8_t *cmd, 
-                                 uint8_t cmdlen, 
-                                 uint16_t timeout = 1000, 
-                                 boolean debug = false);
+    uint32_t sendCommandCheckAck(uint8_t *cmd,
+                                 uint8_t cmdlen,
+                                 uint16_t timeout = 1000,
+                                 boolean debug = true);
 
-    uint32_t initiatorTxRxData(uint8_t *DataOut, 
-                               uint32_t dataSize, 
+    uint32_t initiatorTxRxData(uint8_t *DataOut,
+                               uint32_t dataSize,
                                uint8_t *response,
-                               boolean debug = false);
-   
-    uint32_t targetTxData(uint8_t *DataOut, 
+                               boolean debug = true);
+
+    uint32_t targetTxData(uint8_t *DataOut,
                           uint32_t dataSize,
-                          boolean debug = false);
-                                                         
-    uint32_t targetRxData(uint8_t *response, boolean debug = false);  
-    
-    boolean isTargetReleasedError(uint32_t result);   
-   
+                          boolean debug = true);
+
+    uint32_t targetRxData(uint8_t *response, boolean debug = true);
+
+    boolean isTargetReleasedError(uint32_t result);
+
+ uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse, boolean debug = true);
 
 private:
     uint8_t _ss, _clk, _mosi, _miso;
 
-    boolean spi_readack(boolean debug = false);
+    boolean spi_readack(boolean debug = true);
     uint8_t readspistatus(void);
-    uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse, boolean debug = false);
-    void readspidata(uint8_t* buff, uint32_t n, boolean debug = false);
-    void spiwritecommand(uint8_t* cmd, uint8_t cmdlen, boolean debug = false);
+
+    void readspidata(uint8_t* buff, uint32_t n, boolean debug = true);
+    void spiwritecommand(uint8_t* cmd, uint8_t cmdlen, boolean debug = true);
     void spiwrite(uint8_t c);
     uint8_t spiread(void);
 };

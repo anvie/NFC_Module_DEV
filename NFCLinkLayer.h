@@ -35,12 +35,12 @@ struct PARAMETER_DESCR {
 
 struct PDU {
 public:
-   uint8_t field[2]; 
+   uint8_t field[2];
    PARAMETER_DESCR  params;
 
 
    PDU();
-   
+
    uint8_t getDSAP();
    uint8_t getSSAP();
    uint8_t getPTYPE();
@@ -55,15 +55,15 @@ class NFCLinkLayer {
 public:
    NFCLinkLayer(NFCReader *nfcReader);
    ~NFCLinkLayer();
-   
-   uint32_t openNPPServerLink(boolean debug = false);
+
+   uint32_t openNPPServerLink(boolean debug = true);
    uint32_t closeNPPServerLink();
-      
-   uint32_t openNPPClientLink(boolean debug = false);
+
+   uint32_t openNPPClientLink(boolean debug = true);
    uint32_t closeNPPClientLink();
-   
-   uint32_t serverLinkRxData(uint8_t *&Data, boolean debug = false);
-   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len, boolean debug = false);
+
+   uint32_t serverLinkRxData(uint8_t *&Data, boolean debug = true);
+   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len, boolean debug = true);
 private:
    NFCReader *_nfcReader;
    uint8_t DSAP;
