@@ -29,14 +29,26 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
        return result;
    }
    recievedPDU = ( PDU *) DataIn;
-   if (!_nfcReader->targetRxData(DataIn))
+
+do {
+   uint32_t rx_result = _nfcReader->targetRxData(DataIn);
+   if (rx_result == 0)
    {
       if (debug)
       {
          Serial.println(F("Connection Failed."));
       }
       return CONNECT_RX_FAILURE;
+   } else if (rx_result < 4) {
+      uint8_t zero[] = {0, 0};
+      _nfcReader->targetTxData(zero, sizeof(zero));
+      Serial.println(F("********"));
+
+      continue;
    }
+
+   break;
+} while (1);
 
    targetPayload = (PDU *) PDUBuffer;
    targetPayload->setDSAP(0x01);
@@ -112,6 +124,8 @@ uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
      {
         return result;
      }
+
+     break;
    } while (result < CONNECT_SERVER_PDU_LEN || !recievedPDU->isConnectClientRequest());
 
    targetPayload.setDSAP(recievedPDU->getSSAP());
@@ -126,6 +140,9 @@ uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
       }
       return CONNECT_COMPLETE_TX_FAILURE;
    }
+
+   uint8_t zero[] = {0, 0};
+   _nfcReader->targetTxData(zero, sizeof(zero));
 
    return RESULT_SUCCESS;
 }
@@ -254,9 +271,13 @@ uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *nppMessage, uint32_t len, boole
 
 inline bool PDU::isConnectClientRequest()
 {
+#if 0
     return ((getPTYPE() == CONNECT_PTYPE)                     &&
              (params.length == CONNECT_SERVICE_NAME_LEN)       &&
              (strncmp((char *)params.data, CONNECT_SERVICE_NAME, CONNECT_SERVICE_NAME_LEN) == 0));
+#else
+    return (getPTYPE() == CONNECT_PTYPE);
+#endif
 }
 
 PDU::PDU()
