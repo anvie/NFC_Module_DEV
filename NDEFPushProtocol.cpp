@@ -64,13 +64,23 @@ uint32_t NDEFPushProtocol::rxNDEFPayload(uint8_t *&data)
 
 uint32_t NDEFPushProtocol::pushPayload(uint8_t *NDEFMessage, uint32_t length)
 {
+  
+#if 0
     NPP_MESSAGE *nppMessage = (NPP_MESSAGE *) ALLOCATE_HEADER_SPACE(NDEFMessage, NPP_MESSAGE_HDR_LEN);
 
     nppMessage->version = NPP_SUPPORTED_VERSION;
     nppMessage->numNDEFEntries = MODIFY_ENDIAN((uint32_t)0x00000001);
     nppMessage->actionCode = NPP_ACTION_CODE;
     nppMessage->NDEFLength = MODIFY_ENDIAN(length);
-
+#else
+   SNEP_MESSAGE *nppMessage = (SNEP_MESSAGE *) ALLOCATE_HEADER_SPACE(NDEFMessage, SNEP_MESSAGE_HDR_LEN);
+   
+   nppMessage->version = 0x10;
+   nppMessage->action  = 0x02;
+   nppMessage->length  = MODIFY_ENDIAN(length);
+#endif
+   
+   uint8_t message[] = {0x10, 0x2, 0x0, 0x0, 0x0, 0xE, 0xD2, 0xA, 0x1, 0x74, 0x65, 0x78, 0x74, 0x2F, 0x70, 0x6C, 0x61, 0x69, 0x6E, 0x65};
 
     /*uint8_t *buf = (uint8_t *) nppMessage;
     Serial.println(F("NPP + NDEF Message"));
@@ -84,7 +94,8 @@ uint32_t NDEFPushProtocol::pushPayload(uint8_t *NDEFMessage, uint32_t length)
 
     if(RESULT_OK(result)) //if connection is error-free
     {
-        result =  _linkLayer->clientLinkTxData((uint8_t *)nppMessage, length + NPP_MESSAGE_HDR_LEN);
+        result =  _linkLayer->clientLinkTxData((uint8_t *)nppMessage, length + SNEP_MESSAGE_HDR_LEN);
+//       result = _linkLayer->clientLinkTxData(message, sizeof(message));
     }
 
     return result;

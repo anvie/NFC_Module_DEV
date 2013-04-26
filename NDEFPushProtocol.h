@@ -57,6 +57,15 @@ struct NPP_MESSAGE
    uint8_t NDEFMessage[0];   
 };
 
+#define SNEP_MESSAGE_HDR_LEN   0x6
+struct SNEP_MESSAGE
+{
+  uint8_t version;
+  uint8_t action;
+  uint32_t length;
+  uint8_t message[0];
+};
+
 
 /*struct TEXT_PAYLOAD
 {
