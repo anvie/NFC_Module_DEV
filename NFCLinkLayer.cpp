@@ -65,20 +65,27 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
    memcpy(targetPayload->params.data, CONNECT_SERVICE_NAME, CONNECT_SERVICE_NAME_LEN);
 #endif
 
-  uint8_t PDU[] = {0x11, 0x20};
+  uint8_t PDU[2] ;
   
   delay(10);
 
    do
    {
+       PDU[0] = 0x11;
+       PDU[1] = 0x20;
        if (IS_ERROR(_nfcReader->targetTxData(PDU, 2))) {
           return CONNECT_TX_FAILURE;
        }
        
+       _nfcReader->targetRxData(DataIn);
+       
        PDU[0] = 0;
        PDU[1] = 0;
        _nfcReader->targetTxData(PDU, 2);
-   } while(IS_ERROR(_nfcReader->targetRxData(DataIn)));
+       _nfcReader->targetRxData(DataIn);
+       
+       break;
+   } while(recievedPDU->getPTYPE() == SYMM_PTYPE);
 
    if (recievedPDU->getPTYPE() != CONNECTION_COMPLETE_PTYPE)
    {

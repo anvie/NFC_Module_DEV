@@ -91,12 +91,16 @@ uint32_t NDEFPushProtocol::pushPayload(uint8_t *NDEFMessage, uint32_t length)
         Serial.print(F(" "));
     }*/
     uint32_t result = _linkLayer->openNPPClientLink();
+    
+    
 
     if(RESULT_OK(result)) //if connection is error-free
     {
         result =  _linkLayer->clientLinkTxData((uint8_t *)nppMessage, length + SNEP_MESSAGE_HDR_LEN);
 //       result = _linkLayer->clientLinkTxData(message, sizeof(message));
     }
+    
+    
 
     return result;
 }
