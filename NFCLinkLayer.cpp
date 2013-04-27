@@ -66,8 +66,6 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
 #endif
 
   uint8_t PDU[2] ;
-  
-  delay(10);
 
    do
    {
@@ -259,8 +257,14 @@ uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *nppMessage, uint32_t len, boole
    }
    */
    
-   uint8_t symm[] = {0, 0};
+      
+   uint8_t buf[32];
+      
+    uint8_t symm[] = {0, 0};
     _nfcReader->targetTxData(symm, sizeof(symm));
+    
+//    _nfcReader->targetRxData(buf);
+   
 
    if (IS_ERROR(_nfcReader->targetTxData((uint8_t *)infoPDU, len + 3)))
    {
@@ -271,8 +275,10 @@ uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *nppMessage, uint32_t len, boole
      return NDEF_MESSAGE_TX_FAILURE;
    }
    
-   uint8_t buf[32];
+
    _nfcReader->targetRxData(buf);
+   
+   _nfcReader->targetTxData(symm, sizeof(symm));
 
    PDU disconnect;
    disconnect.setDSAP(DSAP);
@@ -280,6 +286,8 @@ uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *nppMessage, uint32_t len, boole
    disconnect.setPTYPE(DISCONNECT_PTYPE);
    
    _nfcReader->targetTxData((uint8_t *)&disconnect, 2);
+   
+   _nfcReader->targetRxData(buf);
 
    if (debug)
    {
