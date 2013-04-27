@@ -1,25 +1,9 @@
-Embedded-PN532
-==============
+NFC Library for Arduino to communicate with Android
+===================================================
 
-This is an open source NFC stack for the arduino microcontroller that allow peer-to-peer 
-communication between an embedded platform and an Android NFC enabled device. The 
-library implements the Ndef Push Protocol (NPP) and has been tested with an Android NFC-enabled phone
-running Android 2.3.3.
+This is an Arduino library using NFC Shield from Seeed Studio to exchange NDEF message with Android. Using protocols - LLCP and SNEP to get and put NDEF message.
 
 
-Files
-==============
-NDEFPushProtocol - Implements the NDEF push protocol as described by http://static.googleusercontent.com/external_content/untrusted_dlcp/source.android.com/en/us/compatibility/ndef-push-protocol.pdf
-
-NFCLinkLayer - Implements the NFC LinkLayer Protocol that is used by the NDEFPushProtocol. The Link Layer protocol
-               can be found at http://www.nfc-forum.org/specs/spec_list/.
-
-PN532 - Handle communication between the embedded device and the PN532 NFC reader.
+This library is based on (mbedded-PN532)[https://github.com/mweir/Embedded-PN532] and (Ndef)[https://github.com/xiongyihui/Ndef]
 
 
-Example
-==============
-The example is arduino program that send and recieves NDEF messages that contain text. When it recieves an 
-NDEF message, it retrieves the text payload from the NDEF message and updates the NDEF message it sends to 
-contain the recieved text payload. The program works with the example Android NFC program, stick notes 
-(The code for stick notes can be found at http://nfc.android.com/).
