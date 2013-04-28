@@ -5,7 +5,7 @@ This is an Arduino library using NFC Shield from Seeed Studio to exchange NDEF m
 
 
 This library is based on 
-+ (mbedded-PN532)[https://github.com/mweir/Embedded-PN532]
-+ (Ndef)[https://github.com/don/Ndef.git]
++ mbedded-PN532 - https://github.com/mweir/Embedded-PN532
++ Ndef - [https://github.com/don/Ndef.git
 
 
