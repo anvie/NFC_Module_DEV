@@ -1,7 +1,9 @@
-#include "Arduino.h"
-#include "NFCReader.h"
+
 #ifndef NFC_LINK_LAYER_H
 #define NFC_LINK_LAYER_H
+
+#include "Arduino.h"
+#include "NFCReader.h"
 
 #define SYMM_PTYPE                    0x00
 #define PAX_PTYPE                     0x01
@@ -56,14 +58,14 @@ public:
    NFCLinkLayer(NFCReader *nfcReader);
    ~NFCLinkLayer();
 
-   uint32_t openNPPServerLink(boolean debug = true);
+   uint32_t openNPPServerLink(boolean debug = IS_DEBUG);
    uint32_t closeNPPServerLink();
 
-   uint32_t openNPPClientLink(boolean debug = true);
+   uint32_t openNPPClientLink(boolean debug = IS_DEBUG);
    uint32_t closeNPPClientLink();
 
-   uint32_t serverLinkRxData(uint8_t *&Data, boolean debug = true);
-   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len, boolean debug = true);
+   uint32_t serverLinkRxData(uint8_t *&Data, boolean debug = IS_DEBUG);
+   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len, boolean debug = IS_DEBUG);
 private:
    NFCReader *_nfcReader;
    uint8_t DSAP;

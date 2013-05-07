@@ -24,7 +24,7 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
    {
       Serial.println(F("Opening NPP Client Link."));
    }
-   uint32_t result = _nfcReader->configurePeerAsTarget(NPP_CLIENT);
+   uint32_t result = _nfcReader->configurePeerAsTarget(SNEP_CLIENT);
 
    if (IS_ERROR(result))
    {
@@ -119,7 +119,7 @@ uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
       Serial.println(F("Opening Server Link."));
    }
 
-   result = _nfcReader->configurePeerAsTarget(NPP_CLIENT);
+   result = _nfcReader->configurePeerAsTarget(SNEP_CLIENT);
    if (IS_ERROR(result))
    {
        return result;

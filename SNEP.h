@@ -1,8 +1,10 @@
+
+
+#ifndef SNEP_H
+#define SNEP_H
+
 #include "Arduino.h"
 #include "NFCLinkLayer.h"
-
-#ifndef NPP_H
-#define NPP_H
 
 #define NPP_SUPPORTED_VERSION 0x01
 
@@ -45,18 +47,6 @@ enum NDEFState
     NDEF_FINISHED    
 };
 
-
-#define NPP_MESSAGE_HDR_LEN   0x0A
-
-struct NPP_MESSAGE 
-{
-   uint8_t version;
-   uint32_t numNDEFEntries;
-   uint8_t actionCode;
-   uint32_t NDEFLength;
-   uint8_t NDEFMessage[0];   
-};
-
 #define SNEP_MESSAGE_HDR_LEN   0x6
 struct SNEP_MESSAGE
 {
@@ -75,12 +65,12 @@ struct SNEP_MESSAGE
 };
 */
 
-class NDEFPushProtocol 
+class SNEP 
 {
 
 public:
-   NDEFPushProtocol(NFCLinkLayer *);  
-   ~NDEFPushProtocol();
+   SNEP(NFCLinkLayer *);  
+   ~SNEP();
    
    uint32_t openRxConnection(uint32_t timeout);
    uint32_t closeRxConnection();

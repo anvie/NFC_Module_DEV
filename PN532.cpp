@@ -118,7 +118,7 @@ uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
             {
                 if (debug)
                 {
-                    Serial.println("sendCommandCheckAck(): time out when waiting for chip ready");
+                    Serial.println(F("sendCommandCheckAck(): time out when waiting for chip ready"));
                 }
                 return SEND_COMMAND_RX_TIMEOUT_ERROR;
             }
@@ -232,7 +232,7 @@ uint32_t PN532::initiatorTxRxData(uint8_t *DataOut,
 
 uint32_t PN532::configurePeerAsTarget(uint8_t type)
 {
-    static const uint8_t npp_client[44] =      { PN532_TGINITASTARGET,
+    static const uint8_t snep_client[44] =      { PN532_TGINITASTARGET,
                              0x00,
                              0x00, 0x00, //SENS_RES
                              0x00, 0x00, 0x00, //NFCID1
@@ -248,7 +248,7 @@ uint32_t PN532::configurePeerAsTarget(uint8_t type)
                              0x06, 0x46,  0x66, 0x6D, 0x01, 0x01, 0x10, 0x00
                              };
 
-    static const uint8_t npp_server[44] =      { PN532_TGINITASTARGET,
+    static const uint8_t snep_server[44] =      { PN532_TGINITASTARGET,
                              0x01,
                              0x00, 0x00, //SENS_RES
                              0x00, 0x00, 0x00, //NFCID1
@@ -264,18 +264,18 @@ uint32_t PN532::configurePeerAsTarget(uint8_t type)
                              0x06, 0x46,  0x66, 0x6D, 0x01, 0x01, 0x10, 0x00
                              };
 
-    if (type == NPP_CLIENT)
+    if (type == SNEP_CLIENT)
     {
        for(uint8_t iter = 0;iter < 44;iter++)
        {
-          pn532_packetbuffer[iter] = npp_client[iter];
+          pn532_packetbuffer[iter] = snep_client[iter];
        }
     }
-    else if (type == NPP_SERVER)
+    else if (type == SNEP_SERVER)
     {
        for(uint8_t iter = 0;iter < 44;iter++)
        {
-          pn532_packetbuffer[iter] = npp_server[iter];
+          pn532_packetbuffer[iter] = snep_server[iter];
        }
     }
 
@@ -354,7 +354,9 @@ uint32_t PN532::targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug)
 
     uint32_t result = sendCommandCheckAck(pn532_packetbuffer, commandBufferSize, 1000, debug);
     if (IS_ERROR(result)) {
-        Serial.println(F("TX_Target Command Failed."));
+        if (debug) {
+	  Serial.println(F("TX_Target Command Failed."));
+	}
         return result;
     }
 
@@ -799,30 +801,6 @@ boolean PN532_CMD_RESPONSE::verifyResponse(uint32_t cmdCode)
 
 void PN532_CMD_RESPONSE::printResponse()
 {
-#if 0
-    Serial.println(F("Response"));
-    Serial.print(F("Len: 0x"));
-    Serial.println(len, HEX);
-    Serial.print(F("Direction: 0x"));
-    Serial.println(direction, HEX);
-    Serial.print(F("Response Command: 0x"));
-    Serial.println(responseCode, HEX);
-
-    Serial.println("Data: ");
-
-    for (uint8_t i = 0; i < data_len; ++i)
-    {
-        Serial.print(F("0x"));
-        Serial.print(data[i], HEX);
-        Serial.print(F(" "));
-    }
-
-    Serial.println();
-#else
-    if (data_len <= 0)
-    {
- //       return;
-    }
     Serial.print("response: ");
 
     uint8_t *ptr = (uint8_t *) this;
@@ -842,5 +820,4 @@ void PN532_CMD_RESPONSE::printResponse()
         Serial.print(F(" "));
     }
     Serial.println();
-#endif
 }

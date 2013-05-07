@@ -1,6 +1,6 @@
 #include <PN532.h>
 #include <NFCLinkLayer.h>
-#include <NDEFPushProtocol.h>
+#include <SNEP.h>
 #include <avr/power.h>
 #include <avr/sleep.h>
 
@@ -13,7 +13,7 @@
 
 PN532 nfc(SCK, MISO, MOSI, SS);
 NFCLinkLayer linkLayer(&nfc);
-NDEFPushProtocol nppLayer(&linkLayer);
+SNEP snep(&linkLayer);
 
 
 // This message shall be used to rx or tx 
@@ -84,16 +84,16 @@ void loop(void)
 
     uint32_t txResult = GEN_ERROR;
     
-     if (IS_ERROR(nfc.configurePeerAsTarget(NPP_SERVER))) {
+     if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
         sleepMCU();
-//        nfc.configurePeerAsTarget(NPP_SERVER);
+//        nfc.configurePeerAsTarget(SNEP_SERVER);
         PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *)buf;
         nfc.readspicommand(PN532_TGINITASTARGET, response);
      }
     
     do {
   
-        txResult = nppLayer.pushPayload(txNDEFMessagePtr, txLen);
+        txResult = snep.pushPayload(txNDEFMessagePtr, txLen);
    
 
         Serial.print(F("Result: 0x"));

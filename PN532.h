@@ -8,6 +8,8 @@
 #include "Arduino.h"
 #include "NFCReader.h"
 
+#define IS_DEBUG       0
+
 #define PN532_PREAMBLE 0x00
 #define PN532_STARTCODE1 0x00
 #define PN532_STARTCODE2 0xFF
@@ -133,31 +135,31 @@ public:
     uint32_t sendCommandCheckAck(uint8_t *cmd,
                                  uint8_t cmdlen,
                                  uint16_t timeout = 1000,
-                                 boolean debug = true);
+                                 boolean debug = IS_DEBUG);
 
     uint32_t initiatorTxRxData(uint8_t *DataOut,
                                uint32_t dataSize,
                                uint8_t *response,
-                               boolean debug = true);
+                               boolean debug = IS_DEBUG);
 
     uint32_t targetTxData(uint8_t *DataOut,
                           uint32_t dataSize,
-                          boolean debug = true);
+                          boolean debug = IS_DEBUG);
 
-    uint32_t targetRxData(uint8_t *response, boolean debug = true);
+    uint32_t targetRxData(uint8_t *response, boolean debug = IS_DEBUG);
 
     boolean isTargetReleasedError(uint32_t result);
 
- uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse, boolean debug = true);
+ uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse, boolean debug = IS_DEBUG);
 
 private:
     uint8_t _ss, _clk, _mosi, _miso;
 
-    boolean spi_readack(boolean debug = true);
+    boolean spi_readack(boolean debug = IS_DEBUG);
     uint8_t readspistatus(void);
 
-    void readspidata(uint8_t* buff, uint32_t n, boolean debug = true);
-    void spiwritecommand(uint8_t* cmd, uint8_t cmdlen, boolean debug = true);
+    void readspidata(uint8_t* buff, uint32_t n, boolean debug = IS_DEBUG);
+    void spiwritecommand(uint8_t* cmd, uint8_t cmdlen, boolean debug = IS_DEBUG);
     void spiwrite(uint8_t c);
     uint8_t spiread(void);
 };

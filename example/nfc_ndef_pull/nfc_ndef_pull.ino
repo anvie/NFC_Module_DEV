@@ -1,6 +1,6 @@
 #include <PN532.h>
 #include <NFCLinkLayer.h>
-#include <NDEFPushProtocol.h>
+#include <SNEP.h>
 #include <avr/power.h>
 #include <avr/sleep.h>
 
@@ -13,7 +13,7 @@
 
 PN532 nfc(SCK, MISO, MOSI, SS);
 NFCLinkLayer linkLayer(&nfc);
-NDEFPushProtocol nppLayer(&linkLayer);
+SNEP snep(&linkLayer);
 
 uint32_t retrieveTextPayload(uint8_t *NDEFMessage, uint8_t type, uint8_t *&payload, boolean &lastTextPayload);
 uint32_t retrieveTextPayloadFromShortRecord(uint8_t *NDEFMessage, uint8_t *&payload, boolean isIDLenPresent);
@@ -83,16 +83,16 @@ void loop(void)
     
     Serial.println();*/
     
-     if (IS_ERROR(nfc.configurePeerAsTarget(NPP_SERVER))) {
+     if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
         sleepMCU();
-//        nfc.configurePeerAsTarget(NPP_SERVER);
+//        nfc.configurePeerAsTarget(SNEP_SERVER);
         PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *)buf;
         nfc.readspicommand(PN532_TGINITASTARGET, response);
      }
     
     do {
         //Serial.println("Begin Rx Loop");
-        rxResult = nppLayer.rxNDEFPayload(rxNDEFMessagePtr);
+        rxResult = snep.rxNDEFPayload(rxNDEFMessagePtr);
         
         if (rxResult == SEND_COMMAND_RX_TIMEOUT_ERROR)
         {
