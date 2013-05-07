@@ -37,11 +37,11 @@ uint32_t SNEP::rxNDEFPayload(uint8_t *&data)
 
 uint32_t SNEP::pushPayload(uint8_t *NDEFMessage, uint32_t length)
 {
-   SNEP_MESSAGE *nppMessage = (SNEP_MESSAGE *) ALLOCATE_HEADER_SPACE(NDEFMessage, SNEP_MESSAGE_HDR_LEN);
+   SNEP_MESSAGE *snepMessage = (SNEP_MESSAGE *) ALLOCATE_HEADER_SPACE(NDEFMessage, SNEP_MESSAGE_HDR_LEN);
    
-   nppMessage->version = 0x10;
-   nppMessage->action  = 0x02;
-   nppMessage->length  = MODIFY_ENDIAN(length);
+   snepMessage->version = 0x10;
+   snepMessage->action  = 0x02;
+   snepMessage->length  = MODIFY_ENDIAN(length);
   
     uint32_t result = _linkLayer->openNPPClientLink();
     
@@ -49,7 +49,7 @@ uint32_t SNEP::pushPayload(uint8_t *NDEFMessage, uint32_t length)
 
     if(RESULT_OK(result)) //if connection is error-free
     {
-        result =  _linkLayer->clientLinkTxData((uint8_t *)nppMessage, length + SNEP_MESSAGE_HDR_LEN);
+        result =  _linkLayer->clientLinkTxData((uint8_t *)snepMessage, length + SNEP_MESSAGE_HDR_LEN);
     }
     
     

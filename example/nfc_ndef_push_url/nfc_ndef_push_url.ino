@@ -1,3 +1,10 @@
+/**
+ * This example demonstrates pushing a NDEF from Arduino + NFC Shield to Android 4.0+
+ *
+ * Note: to enable NFC Shield wake up Arduino, D2/INT0 need to be connected with IRQ.
+ */
+
+
 #include <PN532.h>
 #include <NFCLinkLayer.h>
 #include <SNEP.h>
@@ -16,17 +23,13 @@ NFCLinkLayer linkLayer(&nfc);
 SNEP snep(&linkLayer);
 
 
-// This message shall be used to rx or tx 
-// NDEF messages it shall never be released
+// NDEF messages
 #define MAX_PKT_HEADER_SIZE  50
 #define MAX_PKT_PAYLOAD_SIZE 100
 uint8_t txNDEFMessage[MAX_PKT_HEADER_SIZE + MAX_PKT_PAYLOAD_SIZE];
 uint8_t *txNDEFMessagePtr; 
 uint8_t txLen;
 
-#define SHORT_RECORD_TYPE_LEN   0x0A
-#define NDEF_SHORT_RECORD_MESSAGE_HDR_LEN   0x03 + SHORT_RECORD_TYPE_LEN
-#define TYPE_STR "text/plain"
 
 void phoneInRange()
 {
@@ -35,7 +38,7 @@ void phoneInRange()
 
 void setup(void) {
     Serial.begin(115200);
-    Serial.println("----------------- nfc ndef demo --------------------");
+    Serial.println(F("----------------- nfc ndef push url --------------------"));
 
 
     txNDEFMessagePtr = &txNDEFMessage[MAX_PKT_HEADER_SIZE];
@@ -106,25 +109,6 @@ void loop(void)
      
 }
 
-
-uint32_t createNDEFShortRecord(uint8_t *message, uint8_t payloadLen, uint8_t *&NDEFMessage)
-{
-   //Serial.print("Message: ");
-   //Serial.println((char *)message);
-   uint8_t * NDEFMessageHdr = ALLOCATE_HEADER_SPACE(NDEFMessage, NDEF_SHORT_RECORD_MESSAGE_HDR_LEN);
-   
-   NDEFMessageHdr[0] =  NDEF_MESSAGE_BEGIN_FLAG | NDEF_MESSAGE_END_FLAG | NDEF_MESSAGE_SHORT_RECORD | TYPE_FORMAT_MEDIA_TYPE; 
-   NDEFMessageHdr[1] =  SHORT_RECORD_TYPE_LEN;
-   NDEFMessageHdr[2] =  payloadLen;
-   memcpy(&NDEFMessageHdr[3], TYPE_STR, SHORT_RECORD_TYPE_LEN);
-   memcpy(NDEFMessage, message, payloadLen);
-   //Serial.print("NDEF Message: ");
-   //Serial.println((char *)NDEFMessage);   
-   NDEFMessage = NDEFMessageHdr;
-   return (payloadLen + NDEF_SHORT_RECORD_MESSAGE_HDR_LEN);   
-}
-
-
 void sleepMCU()
 {
     delay(100);  // delay so that debug message can be printed before the MCU goes to sleep
@@ -138,9 +122,6 @@ void sleepMCU()
     power_timer1_disable();
     power_timer2_disable();
     power_twi_disable();
-    
-    //Serial.println("Going to Sleep\n");
-    //delay(1000);
     
     // Puts the device to sleep.
     sleep_mode();  

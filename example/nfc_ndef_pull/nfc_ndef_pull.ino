@@ -15,10 +15,6 @@ PN532 nfc(SCK, MISO, MOSI, SS);
 NFCLinkLayer linkLayer(&nfc);
 SNEP snep(&linkLayer);
 
-uint32_t retrieveTextPayload(uint8_t *NDEFMessage, uint8_t type, uint8_t *&payload, boolean &lastTextPayload);
-uint32_t retrieveTextPayloadFromShortRecord(uint8_t *NDEFMessage, uint8_t *&payload, boolean isIDLenPresent);
-uint32_t createNDEFShortRecord(uint8_t *message, uint8_t payloadLen, uint8_t *&NDEFMessage);
-
 // This message shall be used to rx or tx 
 // NDEF messages it shall never be released
 #define MAX_PKT_HEADER_SIZE  50
@@ -34,7 +30,7 @@ void phoneInRange()
 
 void setup(void) {
     Serial.begin(115200);
-    Serial.println(F("----------------- NFC get NDEF message --------------------"));
+    Serial.println(F("----------------- NFC pull NDEF message --------------------"));
     
     
     nfc.initializeReader();
@@ -69,19 +65,7 @@ void loop(void)
    Serial.println();
 
     uint32_t rxResult = GEN_ERROR; 
-    uint32_t txResult = GEN_ERROR;
     rxNDEFMessagePtr = &rxNDEFMessage[0];
-    
-    /*uint8_t *buf = (uint8_t *) txNDEFMessagePtr;
-    Serial.println("NDEF Message"); 
-    for (uint16_t i = 0; i < len; ++i)
-    {
-        Serial.print("0x"); 
-        Serial.print(buf[i], HEX);
-        Serial.print(" ");
-    }
-    
-    Serial.println();*/
     
      if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
         sleepMCU();
@@ -91,7 +75,6 @@ void loop(void)
      }
     
     do {
-        //Serial.println("Begin Rx Loop");
         rxResult = snep.rxNDEFPayload(rxNDEFMessagePtr);
         
         if (rxResult == SEND_COMMAND_RX_TIMEOUT_ERROR)
@@ -111,9 +94,9 @@ void loop(void)
            Serial.println(message->getRecordCount());
            NdefRecord record = message->getRecord(0);
            record.print();
-        } 
-     
-        delay(3000);   
+           
+           delay(3000);  
+        }
      } while(0);
      
      
