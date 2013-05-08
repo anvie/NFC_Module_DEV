@@ -8,7 +8,7 @@
 #include "Arduino.h"
 #include "NFCReader.h"
 
-#define IS_DEBUG       0
+#include "debug.h"
 
 #define PN532_PREAMBLE 0x00
 #define PN532_STARTCODE1 0x00

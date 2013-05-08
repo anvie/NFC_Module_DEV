@@ -5,7 +5,7 @@
 
 #include "Arduino.h"
 
-#define IS_DEBUG    0
+#include "debug.h"
 
 #define NFC_READER_CFG_BAUDRATE_106_KPS   0
 #define NFC_READER_CFG_BAUDRATE_201_KPS  1

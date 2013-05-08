@@ -33,13 +33,13 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
    
    recievedPDU = ( PDU *) DataIn;
    uint32_t rx_result = _nfcReader->targetRxData(DataIn);
-   if (rx_result == 0)
+   if (IS_ERROR(rx_result) || (recievedPDU->getPTYPE() != SYMM_PTYPE))
    {
-      if (debug)
-      {
-         Serial.println(F("Connection Failed."));
-      }
-      return CONNECT_RX_FAILURE;
+     if (debug)
+     {
+       Serial.println(F("Connection Failed."));
+     }
+     return CONNECT_RX_FAILURE;
    }
 
   uint8_t PDU[2] ;
@@ -98,23 +98,24 @@ uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
        return result;
    }
 
+   uint8_t symm[] = {0, 0};
    recievedPDU = (PDU *)DataIn;
    do
    {
      result = _nfcReader->targetRxData(DataIn);
-
-     if (debug)
-     {
-        Serial.print(F("Configured as Peer: "));
-        Serial.print(F("0x"));
-        Serial.println(result, HEX);
-     }
-
+     
      if (IS_ERROR(result))
      {
         return result;
      }
-   } while (recievedPDU->getPTYPE() != CONNECT_PTYPE);
+     
+     if (recievedPDU->getPTYPE() == CONNECT_PTYPE) {
+        break;
+     } else {
+        result = _nfcReader->targetTxData(symm, sizeof(symm));
+     }
+     
+   } while (RESULT_OK(result));
 
    targetPayload.setDSAP(recievedPDU->getSSAP());
    targetPayload.setPTYPE(CONNECTION_COMPLETE_PTYPE);
