@@ -41,10 +41,10 @@ void setup(void) {
     Serial.println("----------------- nfc ndef demo --------------------");
 
 
-    uint8_t message[64] = "Hello, this is NFC Shield from Seeed";
+    uint8_t message[] = "Hello, this is NFC Shield from Seeed";
     txNDEFMessagePtr = &txNDEFMessage[MAX_PKT_HEADER_SIZE];
     rxNDEFMessagePtr = &rxNDEFMessage[0];
-    txLen = createNDEFShortRecord(message, 5, txNDEFMessagePtr);    
+    txLen = createNDEFShortRecord(message, sizeof(message), txNDEFMessagePtr);    
     
     if (!txLen)
     { 
