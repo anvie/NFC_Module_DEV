@@ -33,7 +33,7 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
    
    recievedPDU = ( PDU *) DataIn;
    uint32_t rx_result = _nfcReader->targetRxData(DataIn);
-   if (IS_ERROR(rx_result) || (recievedPDU->getPTYPE() != SYMM_PTYPE))
+   if (IS_ERROR(rx_result))
    {
      if (debug)
      {
