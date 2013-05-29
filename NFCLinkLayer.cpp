@@ -12,8 +12,16 @@ NFCLinkLayer::~NFCLinkLayer()
 
 }
 
-
-uint32_t NFCLinkLayer::openNPPClientLink(void)
+/*
+ * the conversation of opening SNEP server link
+ * 
+ * <- SYMM
+ * -> CONN [LLCP_CONNECTING]
+ * <- SYMM [option]
+ * -> SYMM [option]
+ * <- CC [LLCP_CONNECTED]
+ */
+uint32_t NFCLinkLayer::openSNEPClientLink(void)
 {
    PDU *targetPayload;
    PDU *recievedPDU;
@@ -22,7 +30,7 @@ uint32_t NFCLinkLayer::openNPPClientLink(void)
    
    targetPayload = (PDU *) PDUBuffer;
    
-   DMSG(F("Opening NPP Client Link.\n"));
+   DMSG(F("Opening SNEP Client Link.\n"));
 
    uint32_t result = _nfcReader->configurePeerAsTarget(SNEP_CLIENT);
 
@@ -42,16 +50,20 @@ uint32_t NFCLinkLayer::openNPPClientLink(void)
 
   uint8_t PDU[2] ;
 
+  /*
+   * Send CONNECTION PDU
+   */
   PDU[0] = 0x11;
   PDU[1] = 0x20;
   if (IS_ERROR(_nfcReader->targetTxData(PDU, 2))) {
     return CONNECT_TX_FAILURE;
   }
 
-  _nfcReader->targetRxData(DataIn);
   
+  _nfcReader->targetRxData(DataIn);
   PDU[0] = 0;
   PDU[1] = 0;
+  int count = 0;
   while (recievedPDU->getPTYPE() == SYMM_PTYPE) {
     if (IS_ERROR(_nfcReader->targetTxData(PDU, 2))) {
         return CONNECT_TX_FAILURE;
@@ -60,9 +72,17 @@ uint32_t NFCLinkLayer::openNPPClientLink(void)
     if (IS_ERROR(_nfcReader->targetRxData(DataIn))) {
       return CONNECT_RX_FAILURE;
     }
+    
+    count++;
+    if (count > 10) {
+      return CONNECT_TX_FAILURE;
+    }
   }
 
 
+  /*
+   * get a CONNECTION COMPLETE PDU 
+   */
    if (recievedPDU->getPTYPE() != CONNECTION_COMPLETE_PTYPE)
    {
       DMSG(F("Connection Complete Failed.\n"));
@@ -76,13 +96,23 @@ uint32_t NFCLinkLayer::openNPPClientLink(void)
    return RESULT_SUCCESS;
 }
 
-uint32_t NFCLinkLayer::closeNPPClientLink()
+uint32_t NFCLinkLayer::closeSNEPClientLink()
 {
 
 }
 
+/*
+ * the conversation of opening SNEP server link
+ * 
+ * -> SYMM
+ * <- SYMM
+ * ... SYMM repeat
+ * <- CONN [LLCP_CONNECTING]
+ * -> CC [LLCP_CONNECTED]
+ * -> SYMM
+ */
 
-uint32_t NFCLinkLayer::openNPPServerLink(void)
+uint32_t NFCLinkLayer::openSNEPServerLink(void)
 {
    uint8_t status[2];
    uint8_t DataIn[64];
@@ -128,13 +158,13 @@ uint32_t NFCLinkLayer::openNPPServerLink(void)
       return CONNECT_COMPLETE_TX_FAILURE;
    }
 
-   uint8_t zero[] = {0, 0};
-   _nfcReader->targetTxData(zero, sizeof(zero));
+   uint8_t SYMM_PDU[] = {0, 0};
+   _nfcReader->targetTxData(SYMM_PDU, sizeof(SYMM_PDU));
 
    return RESULT_SUCCESS;
 }
 
-uint32_t NFCLinkLayer::closeNPPServerLink()
+uint32_t NFCLinkLayer::closeSNEPServerLink()
 {
    uint8_t DataIn[64];
    PDU *recievedPDU;

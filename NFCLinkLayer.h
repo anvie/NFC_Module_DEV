@@ -58,11 +58,11 @@ public:
    NFCLinkLayer(NFCReader *nfcReader);
    ~NFCLinkLayer();
 
-   uint32_t openNPPServerLink(void);
-   uint32_t closeNPPServerLink(void);
+   uint32_t openSNEPServerLink(void);
+   uint32_t closeSNEPServerLink(void);
 
-   uint32_t openNPPClientLink(void);
-   uint32_t closeNPPClientLink(void);
+   uint32_t openSNEPClientLink(void);
+   uint32_t closeSNEPClientLink(void);
 
    uint32_t serverLinkRxData(uint8_t *&Data);
    uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len);

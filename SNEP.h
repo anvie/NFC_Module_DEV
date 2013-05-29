@@ -6,8 +6,6 @@
 #include "Arduino.h"
 #include "NFCLinkLayer.h"
 
-#define NPP_SUPPORTED_VERSION 0x01
-
 #define MODIFY_ENDIAN(x) ((((x) >> 24) & 0xFF)         /* move byte 3 to byte 0 */ \
                                    | (((x) << 24) & 0xFF000000) /* move byte 0 to byte 3 */ \
                                    | (((x) << 8)  & 0xFF0000)   /* move byte 1 to byte 2 */ \
@@ -32,7 +30,6 @@
 #define TYPE_FORMAT_RESERVED_TYPE              0x07  
 
 
-#define NPP_ACTION_CODE            0x01
 #define NFC_FORUM_TEXT_TYPE        0x54                   
 
 

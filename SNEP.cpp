@@ -12,7 +12,7 @@ SNEP::~SNEP()
 
 uint32_t SNEP::rxNDEFPayload(uint8_t *&data)
 {
-    uint32_t result = _linkLayer->openNPPServerLink();
+    uint32_t result = _linkLayer->openSNEPServerLink();
 
     if(RESULT_OK(result)) //if connection is error-free
     {
@@ -43,7 +43,7 @@ uint32_t SNEP::pushPayload(uint8_t *NDEFMessage, uint32_t length)
    snepMessage->action  = 0x02;
    snepMessage->length  = MODIFY_ENDIAN(length);
   
-    uint32_t result = _linkLayer->openNPPClientLink();
+    uint32_t result = _linkLayer->openSNEPClientLink();
     
     
 
