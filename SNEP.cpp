@@ -27,8 +27,8 @@ uint32_t SNEP::rxNDEFPayload(uint8_t *&data)
             uint32_t length =  (ptr[2] << 24) + (ptr[3] << 16) + (ptr[4] << 8) + ptr[5];
 
             data = ptr + 6;
-            Serial.print("NDEF message length: ");
-            Serial.println(length);
+//            Serial.print("NDEF message length: ");
+//            Serial.println(length);
             return length;
        }
     }

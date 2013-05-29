@@ -5,8 +5,6 @@
 
 #include "Arduino.h"
 
-#include "debug.h"
-
 #define NFC_READER_CFG_BAUDRATE_106_KPS   0
 #define NFC_READER_CFG_BAUDRATE_201_KPS  1
 #define NFC_READER_CFG_BAUDRATE_424_KPS   2
@@ -73,18 +71,16 @@ public:
 
    virtual uint32_t initiatorTxRxData(uint8_t *DataOut,
                                        uint32_t dataSize,
-                                       uint8_t *response,
-                                       boolean debug = IS_DEBUG) = 0;
+                                       uint8_t *response) = 0;
 
-   virtual uint32_t targetRxData(uint8_t *response, boolean debug = IS_DEBUG) = 0;
-   virtual uint32_t targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug = IS_DEBUG) = 0;
+   virtual uint32_t targetRxData(uint8_t *response) = 0;
+   virtual uint32_t targetTxData(uint8_t *DataOut, uint32_t dataSize) = 0;
 
    virtual uint32_t getTargetStatus(uint8_t *statusOut) = 0;
 
 	 virtual uint32_t sendCommandCheckAck(uint8_t *cmd,
                               uint8_t cmdlen,
-                              uint16_t timeout = 1000,
-                              boolean debug = IS_DEBUG) = 0;
+                              uint16_t timeout = 1000) = 0;
 
    virtual boolean isTargetReleasedError(uint32_t result) = 0;
 

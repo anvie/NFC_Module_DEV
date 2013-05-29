@@ -6,7 +6,7 @@
 
 #include "PN532.h"
 
-#define PN532DEBUG 1
+#include "debug.h"
 
 uint8_t pn532ack[] = {0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00};
 uint8_t pn532response_firmwarevers[] = {0x00, 0xFF, 0x06, 0xFA, 0xD5, 0x03};
@@ -40,6 +40,7 @@ void PN532::initializeReader()
     sendCommandCheckAck(pn532_packetbuffer, 1);
 
     // ignore response!
+    digitalWrite(_ss, HIGH);
 }
 
 
@@ -74,17 +75,20 @@ uint32_t PN532::getFirmwareVersion(void)
     return version;
 }
 
+boolean PN532::isReady(void)
+{
+  return (readspistatus() == PN532_SPI_READY);
+}
 
 // default timeout of one second
 uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
                                     uint8_t cmdlen,
-                                    uint16_t timeout,
-                                    boolean debug)
+                                    uint16_t timeout)
 {
     uint16_t timer = 0;
 
     // write the command
-    spiwritecommand(cmd, cmdlen, debug);
+    spiwritecommand(cmd, cmdlen);
 
     // Wait for chip to say its ready!
     while (readspistatus() != PN532_SPI_READY)
@@ -101,7 +105,7 @@ uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
     }
 
     // read acknowledgement
-    if (!spi_readack(debug)) {
+    if (!spi_readack()) {
         return SEND_COMMAND_RX_ACK_ERROR;
     }
 
@@ -116,10 +120,8 @@ uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
             timer+=10;
             if (timer > timeout)
             {
-                if (debug)
-                {
-                    Serial.println(F("sendCommandCheckAck(): time out when waiting for chip ready"));
-                }
+                DMSG(F("sendCommandCheckAck(): time out when waiting for chip ready"));
+
                 return SEND_COMMAND_RX_TIMEOUT_ERROR;
             }
         }
@@ -194,8 +196,7 @@ uint32_t PN532::configurePeerAsInitiator(uint8_t baudrate)
 
 uint32_t PN532::initiatorTxRxData(uint8_t *DataOut,
                            uint32_t dataSize,
-                           uint8_t *DataIn,
-                           boolean debug)
+                           uint8_t *DataIn)
 {
     pn532_packetbuffer[0] = PN532_INDATAEXCHANGE;
     pn532_packetbuffer[1] = 0x01; //Target 01
@@ -218,10 +219,9 @@ uint32_t PN532::initiatorTxRxData(uint8_t *DataOut,
        return false;
     }
 
-    if (debug)
-    {
-       response->printResponse();
-    }
+#if IS_DEBUG
+    response->printResponse();
+#endif
 
     if (response->data[0] != 0x00)
     {
@@ -310,11 +310,11 @@ uint32_t PN532::getTargetStatus(uint8_t *DataIn)
     return 0;
 }
 
-uint32_t PN532::targetRxData(uint8_t *DataIn, boolean debug)
+uint32_t PN532::targetRxData(uint8_t *DataIn)
 {
     ///////////////////////////////////// Receiving from Initiator ///////////////////////////
     pn532_packetbuffer[0] = PN532_TGGETDATA;
-    uint32_t result = sendCommandCheckAck(pn532_packetbuffer, 1, 1000, debug);
+    uint32_t result = sendCommandCheckAck(pn532_packetbuffer, 1, 1000);
     if (IS_ERROR(result)) {
         //Serial.println(F("SendCommandCheck Ack Failed"));
         return NFC_READER_COMMAND_FAILURE;
@@ -323,7 +323,7 @@ uint32_t PN532::targetRxData(uint8_t *DataIn, boolean debug)
     // read data packet
     PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *) pn532_packetbuffer;
 
-    result = readspicommand(PN532_TGGETDATA, response, debug);
+    result = readspicommand(PN532_TGGETDATA, response);
 
     if (IS_ERROR(result))
     {
@@ -342,7 +342,7 @@ uint32_t PN532::targetRxData(uint8_t *DataIn, boolean debug)
 
 
 
-uint32_t PN532::targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug)
+uint32_t PN532::targetTxData(uint8_t *DataOut, uint32_t dataSize)
 {
     ///////////////////////////////////// Sending to Initiator ///////////////////////////
     pn532_packetbuffer[0] = PN532_TGSETDATA;
@@ -352,11 +352,10 @@ uint32_t PN532::targetTxData(uint8_t *DataOut, uint32_t dataSize, boolean debug)
         pn532_packetbuffer[iter] = DataOut[iter-1]; //pack the data to send to target
     }
 
-    uint32_t result = sendCommandCheckAck(pn532_packetbuffer, commandBufferSize, 1000, debug);
+    uint32_t result = sendCommandCheckAck(pn532_packetbuffer, commandBufferSize, 1000);
     if (IS_ERROR(result)) {
-        if (debug) {
-	  Serial.println(F("TX_Target Command Failed."));
-	}
+        DMSG(F("TX_Target Command Failed."));
+
         return result;
     }
 
@@ -560,11 +559,11 @@ inline boolean PN532::isTargetReleasedError(uint32_t result)
 /************** high level SPI */
 
 
-boolean PN532::spi_readack(boolean debug)
+boolean PN532::spi_readack(void)
 {
     uint8_t ackbuff[6];
 
-    readspidata(ackbuff, 6, debug);
+    readspidata(ackbuff, 6);
 
     return (0 == strncmp((char *)ackbuff, (char *)pn532ack, 6));
 }
@@ -583,7 +582,7 @@ uint8_t PN532::readspistatus(void)
     return x;
 }
 
-uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response, boolean debug)
+uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response)
 {
 
     uint8_t calc_checksum = 0;
@@ -656,54 +655,44 @@ uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response, bo
     }
 
     digitalWrite(_ss, HIGH);
-    if (debug)
-    {
-        response->printResponse();
-    }
+#if IS_DEBUG
+    response->printResponse();
+#endif
 
     return retVal;
 }
 
-void PN532::readspidata(uint8_t* buff, uint32_t n, boolean debug)
+void PN532::readspidata(uint8_t* buff, uint32_t n)
 {
     digitalWrite(_ss, LOW);
     delay(2);
     spiwrite(PN532_SPI_DATAREAD);
 
-    if (debug)
-    {
-        Serial.print(F("read:  "));
-    }
+    DMSG(F("read:  "));
 
     for (uint8_t i=0; i<n; i++)
     {
         delay(1);
         buff[i] = spiread();
 
-        if (debug)
-        {
-            Serial.print(F(" "));
-            Serial.print(buff[i], HEX);
-        }
+        DMSG(' ');
+#if IS_DEBUG
+        Serial.print(buff[i], HEX);
+#endif
     }
 
-    if (debug)
-    {
-        Serial.println();
-    }
+    DMSG('\n');
 
     digitalWrite(_ss, HIGH);
 }
 
-void PN532::spiwritecommand(uint8_t* cmd, uint8_t cmdlen, boolean debug)
+void PN532::spiwritecommand(uint8_t* cmd, uint8_t cmdlen)
 {
     uint8_t checksum;
     cmdlen++;
 
-    if (debug)
-    {
-      Serial.print(F("\nwrite: "));
-    }
+    DMSG(F("\nwrite: "));
+
     digitalWrite(_ss, LOW);
     delay(2);     // or whatever the delay is for waking up the board
     spiwrite(PN532_SPI_DATAWRITE);
@@ -720,35 +709,33 @@ void PN532::spiwritecommand(uint8_t* cmd, uint8_t cmdlen, boolean debug)
     spiwrite(PN532_HOSTTOPN532);
     checksum += PN532_HOSTTOPN532;
 
-    if (debug)
-    {
+#if IS_DEBUG
         Serial.print(F(" ")); Serial.print(PN532_PREAMBLE, HEX);
         Serial.print(F(" ")); Serial.print(PN532_PREAMBLE, HEX);
         Serial.print(F(" ")); Serial.print(PN532_STARTCODE2, HEX);
         Serial.print(F(" ")); Serial.print(cmdlen, HEX);
         Serial.print(F(" ")); Serial.print(cmdlen_1, HEX);
         Serial.print(F(" ")); Serial.print(PN532_HOSTTOPN532, HEX);
-    }
+#endif
 
     for (uint8_t i=0; i<cmdlen-1; i++) {
         spiwrite(cmd[i]);
         checksum += cmd[i];
-        if (debug)
-        {
-          Serial.print(F(" ")); Serial.print(cmd[i], HEX);
-        }
+#if IS_DEBUG
+          Serial.print(' ');
+          Serial.print(cmd[i], HEX);
+#endif
     }
     uint8_t checksum_1=~checksum;
     spiwrite(checksum_1);
     spiwrite(PN532_POSTAMBLE);
     digitalWrite(_ss, HIGH);
 
-    if (debug)
-    {
+#if IS_DEBUG
       Serial.print(F(" 0x")); Serial.print(checksum_1, HEX);
       Serial.print(F(" 0x")); Serial.print(PN532_POSTAMBLE, HEX);
       Serial.println();
-    }
+#endif
 }
 /************** low level SPI */
 
@@ -811,13 +798,13 @@ void PN532_CMD_RESPONSE::printResponse()
             continue;
         }
         Serial.print(ptr[i], HEX);
-        Serial.print(F(" "));
+        Serial.print(' ');
     }
 
     for (uint8_t i = 0; i < data_len; ++i)
     {
         Serial.print(data[i], HEX);
-        Serial.print(F(" "));
+        Serial.print(' ');
     }
     Serial.println();
 }

@@ -134,32 +134,31 @@ public:
 
     uint32_t sendCommandCheckAck(uint8_t *cmd,
                                  uint8_t cmdlen,
-                                 uint16_t timeout = 1000,
-                                 boolean debug = IS_DEBUG);
+                                 uint16_t timeout = 1000);
 
     uint32_t initiatorTxRxData(uint8_t *DataOut,
                                uint32_t dataSize,
-                               uint8_t *response,
-                               boolean debug = IS_DEBUG);
+                               uint8_t *response);
 
     uint32_t targetTxData(uint8_t *DataOut,
-                          uint32_t dataSize,
-                          boolean debug = IS_DEBUG);
+                          uint32_t dataSize);
 
-    uint32_t targetRxData(uint8_t *response, boolean debug = IS_DEBUG);
+    uint32_t targetRxData(uint8_t *response);
 
     boolean isTargetReleasedError(uint32_t result);
+    
+    boolean isReady(void);
 
- uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse, boolean debug = IS_DEBUG);
+ uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse);
 
 private:
     uint8_t _ss, _clk, _mosi, _miso;
 
-    boolean spi_readack(boolean debug = IS_DEBUG);
+    boolean spi_readack();
     uint8_t readspistatus(void);
 
-    void readspidata(uint8_t* buff, uint32_t n, boolean debug = IS_DEBUG);
-    void spiwritecommand(uint8_t* cmd, uint8_t cmdlen, boolean debug = IS_DEBUG);
+    void readspidata(uint8_t* buff, uint32_t n);
+    void spiwritecommand(uint8_t* cmd, uint8_t cmdlen);
     void spiwrite(uint8_t c);
     uint8_t spiread(void);
 };

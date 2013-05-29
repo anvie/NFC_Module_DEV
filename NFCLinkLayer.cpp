@@ -1,5 +1,7 @@
 #include "NFCLinkLayer.h"
 
+#include "debug.h"
+
 NFCLinkLayer::NFCLinkLayer(NFCReader *nfcReader)
     : _nfcReader(nfcReader)
 {
@@ -11,7 +13,7 @@ NFCLinkLayer::~NFCLinkLayer()
 }
 
 
-uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
+uint32_t NFCLinkLayer::openNPPClientLink(void)
 {
    PDU *targetPayload;
    PDU *recievedPDU;
@@ -20,10 +22,8 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
    
    targetPayload = (PDU *) PDUBuffer;
    
-   if (debug)
-   {
-      Serial.println(F("Opening NPP Client Link."));
-   }
+   DMSG(F("Opening NPP Client Link.\n"));
+
    uint32_t result = _nfcReader->configurePeerAsTarget(SNEP_CLIENT);
 
    if (IS_ERROR(result))
@@ -35,10 +35,8 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
    uint32_t rx_result = _nfcReader->targetRxData(DataIn);
    if (IS_ERROR(rx_result))
    {
-     if (debug)
-     {
-       Serial.println(F("Connection Failed."));
-     }
+     DMSG(F("Connection Failed.\n"));
+
      return CONNECT_RX_FAILURE;
    }
 
@@ -49,21 +47,26 @@ uint32_t NFCLinkLayer::openNPPClientLink(boolean debug)
   if (IS_ERROR(_nfcReader->targetTxData(PDU, 2))) {
     return CONNECT_TX_FAILURE;
   }
-  
+
   _nfcReader->targetRxData(DataIn);
   
   PDU[0] = 0;
   PDU[1] = 0;
-  _nfcReader->targetTxData(PDU, 2);
-  _nfcReader->targetRxData(DataIn);
+  while (recievedPDU->getPTYPE() == SYMM_PTYPE) {
+    if (IS_ERROR(_nfcReader->targetTxData(PDU, 2))) {
+        return CONNECT_TX_FAILURE;
+    }
+    
+    if (IS_ERROR(_nfcReader->targetRxData(DataIn))) {
+      return CONNECT_RX_FAILURE;
+    }
+  }
 
 
    if (recievedPDU->getPTYPE() != CONNECTION_COMPLETE_PTYPE)
    {
-      if (debug)
-      {
-         Serial.println(F("Connection Complete Failed."));
-      }
+      DMSG(F("Connection Complete Failed.\n"));
+
       return UNEXPECTED_PDU_FAILURE;
    }
 
@@ -79,7 +82,7 @@ uint32_t NFCLinkLayer::closeNPPClientLink()
 }
 
 
-uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
+uint32_t NFCLinkLayer::openNPPServerLink(void)
 {
    uint8_t status[2];
    uint8_t DataIn[64];
@@ -87,10 +90,7 @@ uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
    PDU targetPayload;
    uint32_t result;
 
-   if (debug)
-   {
-      Serial.println(F("Opening Server Link."));
-   }
+   DMSG(F("Opening Server Link.\n"));
 
    result = _nfcReader->configurePeerAsTarget(SNEP_CLIENT);
    if (IS_ERROR(result))
@@ -123,10 +123,8 @@ uint32_t NFCLinkLayer::openNPPServerLink(boolean debug)
 
    if (IS_ERROR(_nfcReader->targetTxData((uint8_t *)&targetPayload, 2)))
    {
-      if (debug)
-      {
-         Serial.println(F("Connection Complete Failed."));
-      }
+      DMSG(F("Connection Complete Failed.\n"));
+
       return CONNECT_COMPLETE_TX_FAILURE;
    }
 
@@ -159,7 +157,7 @@ uint32_t NFCLinkLayer::closeNPPServerLink()
    return result;
 }
 
-uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data, boolean debug)
+uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data)
 {
    uint32_t result = _nfcReader->targetRxData(Data);
    uint8_t len;
@@ -168,10 +166,8 @@ uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data, boolean debug)
 
    if (IS_ERROR(result))
    {
-      if (debug)
-      {
-         Serial.println(F("Failed to Recieve NDEF Message."));
-      }
+      DMSG(F("Failed to Recieve NDEF Message.\n"));
+
       return NDEF_MESSAGE_RX_FAILURE;
    }
 
@@ -181,10 +177,8 @@ uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data, boolean debug)
 
    if (recievedPDU->getPTYPE() != INFORMATION_PTYPE)
    {
-      if (debug)
-      {
-         Serial.println(F("Unexpected PDU"));
-      }
+      DMSG(F("Unexpected PDU"));
+
       return UNEXPECTED_PDU_FAILURE;
    }
 
@@ -198,10 +192,8 @@ uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data, boolean debug)
    result = _nfcReader->targetTxData((uint8_t *)&ackPDU, 3);
    if (IS_ERROR(result))
    {
-      if (debug)
-      {
-         Serial.println(F("Ack Failed."));
-      }
+      DMSG(F("Ack Failed."));
+
       return result;
    }
 
@@ -211,7 +203,7 @@ uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data, boolean debug)
    return len - 2;
 }
 
-uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *snepMessage, uint32_t len, boolean debug)
+uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *snepMessage, uint32_t len)
 {
    PDU *infoPDU = (PDU *) ALLOCATE_HEADER_SPACE(snepMessage, 3);
    infoPDU->setDSAP(DSAP);
@@ -230,10 +222,8 @@ uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *snepMessage, uint32_t len, bool
 
    if (IS_ERROR(_nfcReader->targetTxData((uint8_t *)infoPDU, len + 3)))
    {
-     if (debug)
-     {
-        Serial.println(F("Sending NDEF Message Failed."));
-     }
+     DMSG(F("Sending NDEF Message Failed."));
+
      return NDEF_MESSAGE_TX_FAILURE;
    }
    
@@ -251,10 +241,8 @@ uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *snepMessage, uint32_t len, bool
    
    _nfcReader->targetRxData(buf);
 
-   if (debug)
-   {
-      Serial.println(F("Sent NDEF Message"));
-   }
+   DMSG(F("Sent NDEF Message"));
+
    return RESULT_SUCCESS;
 }
 

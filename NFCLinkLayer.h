@@ -58,14 +58,14 @@ public:
    NFCLinkLayer(NFCReader *nfcReader);
    ~NFCLinkLayer();
 
-   uint32_t openNPPServerLink(boolean debug = IS_DEBUG);
-   uint32_t closeNPPServerLink();
+   uint32_t openNPPServerLink(void);
+   uint32_t closeNPPServerLink(void);
 
-   uint32_t openNPPClientLink(boolean debug = IS_DEBUG);
-   uint32_t closeNPPClientLink();
+   uint32_t openNPPClientLink(void);
+   uint32_t closeNPPClientLink(void);
 
-   uint32_t serverLinkRxData(uint8_t *&Data, boolean debug = IS_DEBUG);
-   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len, boolean debug = IS_DEBUG);
+   uint32_t serverLinkRxData(uint8_t *&Data);
+   uint32_t clientLinkTxData(uint8_t *nppMessage, uint32_t len);
 private:
    NFCReader *_nfcReader;
    uint8_t DSAP;
