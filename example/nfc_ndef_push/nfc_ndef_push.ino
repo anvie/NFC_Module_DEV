@@ -67,16 +67,15 @@ void setup(void) {
     Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
     Serial.print("Supports "); Serial.println(versiondata & 0xFF, HEX);
     
+#ifdef ENABLE_SLEEP    
     // set power sleep mode
     set_sleep_mode(SLEEP_MODE_ADC);
-
-    nfc.SAMConfig();
-    
     // interrupt to wake MCU
     attachInterrupt(0, phoneInRange, FALLING);
+#endif
+    
+    nfc.SAMConfig();
 }
-
-uint8_t buf[180];
 
 void loop(void) 
 {
@@ -87,12 +86,22 @@ void loop(void)
 
     uint32_t txResult = GEN_ERROR;
     
+#ifdef ENABLE_SLEEP
      if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
         sleepMCU();
-//        nfc.configurePeerAsTarget(SNEP_SERVER);
-        PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *)buf;
-        nfc.readspicommand(PN532_TGINITASTARGET, response);
+        
+        extern uint8_t pn532_packetbuffer[];
+        nfc.readspicommand(PN532_TGINITASTARGET, (PN532_CMD_RESPONSE *)pn532_packetbuffer);
      }
+#else
+     if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
+        extern uint8_t pn532_packetbuffer[];
+        
+        while (!nfc.isReady()) {
+        }
+        nfc.readspicommand(PN532_TGINITASTARGET, (PN532_CMD_RESPONSE *)pn532_packetbuffer);
+      }
+#endif
     
     do {
   
