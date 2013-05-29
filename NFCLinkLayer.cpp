@@ -2,6 +2,8 @@
 
 #include "debug.h"
 
+uint8_t SYMM_PDU[] = {0, 0};
+
 NFCLinkLayer::NFCLinkLayer(NFCReader *nfcReader)
     : _nfcReader(nfcReader)
 {
@@ -158,9 +160,6 @@ uint32_t NFCLinkLayer::openSNEPServerLink(void)
       return CONNECT_COMPLETE_TX_FAILURE;
    }
 
-   uint8_t SYMM_PDU[] = {0, 0};
-   _nfcReader->targetTxData(SYMM_PDU, sizeof(SYMM_PDU));
-
    return RESULT_SUCCESS;
 }
 
@@ -189,28 +188,43 @@ uint32_t NFCLinkLayer::closeSNEPServerLink()
 
 uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data)
 {
-   uint32_t result = _nfcReader->targetRxData(Data);
    uint8_t len;
-   PDU *recievedPDU;
    PDU ackPDU;
+   uint32_t result;
+   uint8_t count = 0;
+   PDU *recievedPDU = (PDU *) Data;
 
-   if (IS_ERROR(result))
-   {
+   do {
+    result = _nfcReader->targetRxData(Data);
+    if (IS_ERROR(result))
+    {
       DMSG(F("Failed to Recieve NDEF Message.\n"));
 
       return NDEF_MESSAGE_RX_FAILURE;
-   }
+    }
+    
+    if (recievedPDU->getPTYPE() == INFORMATION_PTYPE)
+    {
+      break;
+    }
+    
+    if (recievedPDU->getPTYPE() == SYMM_PTYPE) {
+      result = _nfcReader->targetTxData(SYMM_PDU, sizeof(SYMM_PDU));
+      if (IS_ERROR(result))
+      {
+        DMSG(F("Failed to Recieve NDEF Message.\n"));
+
+        return NDEF_MESSAGE_RX_FAILURE;
+      }
+    }
+    
+    count++;
+    if (count > 10) {
+      return NDEF_MESSAGE_RX_FAILURE;
+    }
+   } while (1);
 
    len = (uint8_t) result;
-
-   recievedPDU = (PDU *) Data;
-
-   if (recievedPDU->getPTYPE() != INFORMATION_PTYPE)
-   {
-      DMSG(F("Unexpected PDU"));
-
-      return UNEXPECTED_PDU_FAILURE;
-   }
 
    // Acknowledge reciept of Information PDU
    ackPDU.setDSAP(recievedPDU->getSSAP());
