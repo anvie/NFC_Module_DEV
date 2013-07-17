@@ -4,6 +4,7 @@
 // authenticateBlock, readMemoryBlock, writeMemoryBlock contributed
 // by Seeed Technology Inc (www.seeedstudio.com)
 
+#include <SPI.h>
 #include "PN532.h"
 
 #include "debug.h"
@@ -16,26 +17,28 @@ uint8_t pn532response_firmwarevers[] = {0x00, 0xFF, 0x06, 0xFA, 0xD5, 0x03};
 
 uint8_t pn532_packetbuffer[TS_GET_DATA_IN_MAX_SIZE];
 
-PN532::PN532(uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t ss)
+PN532::PN532(uint8_t ss)
 {
-    _clk = clk;
-    _miso = miso;
-    _mosi = mosi;
     _ss = ss;
 
     pinMode(_ss, OUTPUT);
-    pinMode(_clk, OUTPUT);
-    pinMode(_mosi, OUTPUT);
-    pinMode(_miso, INPUT);
 }
 
 void PN532::initializeReader()
 {
+    SPI.begin();
+    /*The mode of the SPI interface should be set at mode0 
+   	  according to the datasheet of PN532 */
+    SPI.setDataMode(SPI_MODE0);
+    SPI.setBitOrder(LSBFIRST);
+    /*Set the SPI frequency to be one sixteenth of the 
+   	  frequency of the system clock*/
+    SPI.setClockDivider(SPI_CLOCK_DIV16);
+    
     digitalWrite(_ss, LOW);
+    delay(4);
 
-    delay(1000);
-
-    // not exactly sure why but we have to send a dummy command to get synced up
+    // send a dummy command to get synced up
     pn532_packetbuffer[0] = PN532_FIRMWAREVERSION;
     sendCommandCheckAck(pn532_packetbuffer, 1);
 
@@ -95,13 +98,13 @@ uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
     {
         if (timeout != 0)
         {
-            timer+=10;
+            timer+=1;
             if (timer > timeout)
             {
                 return SEND_COMMAND_TX_TIMEOUT_ERROR;
             }
         }
-        delay(10);
+        delay(1);
     }
 
     // read acknowledgement
@@ -110,14 +113,12 @@ uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
     }
 
     timer = 0;
-
-    timeout = 3000;
     // Wait for chip to say its ready!
     while (readspistatus() != PN532_SPI_READY)
     {
         if (timeout != 0)
         {
-            timer+=10;
+            timer+=1;
             if (timer > timeout)
             {
                 DMSG(F("sendCommandCheckAck(): time out when waiting for chip ready"));
@@ -125,7 +126,7 @@ uint32_t PN532::sendCommandCheckAck(uint8_t *cmd,
                 return SEND_COMMAND_RX_TIMEOUT_ERROR;
             }
         }
-        delay(10);
+        delay(1);
     }
 
     return RESULT_SUCCESS; // ack'd command
@@ -741,40 +742,12 @@ void PN532::spiwritecommand(uint8_t* cmd, uint8_t cmdlen)
 
 void PN532::spiwrite(uint8_t c)
 {
-    int8_t i;
-    digitalWrite(_clk, HIGH);
-
-    for (i=0; i<8; i++)
-    {
-        digitalWrite(_clk, LOW);
-        if (c & _BV(i))
-        {
-            digitalWrite(_mosi, HIGH);
-        }
-        else
-        {
-            digitalWrite(_mosi, LOW);
-        }
-        digitalWrite(_clk, HIGH);
-    }
+    SPI.transfer(c);
 }
 
 uint8_t PN532::spiread(void)
 {
-    int8_t i, x;
-    x = 0;
-    digitalWrite(_clk, HIGH);
-
-    for (i=0; i<8; i++)
-    {
-        if (digitalRead(_miso))
-        {
-            x |= _BV(i);
-        }
-        digitalWrite(_clk, LOW);
-        digitalWrite(_clk, HIGH);
-    }
-    return x;
+    return SPI.transfer(0);
 }
 
 boolean PN532_CMD_RESPONSE::verifyResponse(uint32_t cmdCode)

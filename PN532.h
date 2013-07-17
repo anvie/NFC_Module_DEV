@@ -106,7 +106,7 @@ struct PN532_CMD_RESPONSE {
 
 class PN532 : public NFCReader {
 public:
-    PN532(uint8_t cs, uint8_t clk, uint8_t mosi, uint8_t miso);
+    PN532(uint8_t ss);
 
     uint32_t SAMConfig(void);
     void initializeReader();
@@ -152,7 +152,7 @@ public:
  uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse);
 
 private:
-    uint8_t _ss, _clk, _mosi, _miso;
+    uint8_t _ss;
 
     boolean spi_readack();
     uint8_t readspistatus(void);
