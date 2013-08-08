@@ -74,6 +74,7 @@ public:
                                        uint8_t *response) = 0;
 
    virtual uint32_t targetRxData(uint8_t *response) = 0;
+   virtual uint32_t targetRxData(uint8_t *response, uint32_t len) = 0;
    virtual uint32_t targetTxData(uint8_t *DataOut, uint32_t dataSize) = 0;
 
    virtual uint32_t getTargetStatus(uint8_t *statusOut) = 0;

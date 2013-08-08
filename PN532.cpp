@@ -33,7 +33,7 @@ void PN532::initializeReader()
     SPI.setBitOrder(LSBFIRST);
     /*Set the SPI frequency to be one sixteenth of the 
    	  frequency of the system clock*/
-    SPI.setClockDivider(SPI_CLOCK_DIV16);
+    SPI.setClockDivider(SPI_CLOCK_DIV8);
     
     digitalWrite(_ss, LOW);
     delay(4);
@@ -233,55 +233,24 @@ uint32_t PN532::initiatorTxRxData(uint8_t *DataOut,
 
 uint32_t PN532::configurePeerAsTarget(uint8_t type)
 {
-    static const uint8_t snep_client[44] =      { PN532_TGINITASTARGET,
-                             0x00,
-                             0x00, 0x00, //SENS_RES
-                             0x00, 0x00, 0x00, //NFCID1
-                             0x00, //SEL_RES
+    static const uint8_t command[] =      { PN532_TGINITASTARGET,
+            0,
+            0x00, 0x00,         //SENS_RES
+            0x00, 0x00, 0x00,   //NFCID1
+            0x40,               //SEL_RES
 
-                             0x01, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // POL_RES
-                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x01, 0xFE, 0x0F, 0xBB, 0xBA, 0xA6, 0xC9, 0x89, // POL_RES
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0xFF, 0xFF,
 
-                             0x00, 0x00,
+            0x01, 0xFE, 0x0F, 0xBB, 0xBA, 0xA6, 0xC9, 0x89, 0x00, 0x00, //NFCID3t: Change this to desired value
 
-                             0x01, 0xFE, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //NFCID3t: Change this to desired value
+            0x06, 0x46,  0x66, 0x6D, 0x01, 0x01, 0x10, 0x00// LLCP magic number and version parameter
+            };
 
-                             0x06, 0x46,  0x66, 0x6D, 0x01, 0x01, 0x10, 0x00
-                             };
-
-    static const uint8_t snep_server[44] =      { PN532_TGINITASTARGET,
-                             0x01,
-                             0x00, 0x00, //SENS_RES
-                             0x00, 0x00, 0x00, //NFCID1
-                             0x40, //SEL_RES
-
-                             0x01, 0xFE, 0x0F, 0xBB, 0xBA, 0xA6, 0xC9, 0x89, // POL_RES
-                             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-
-                             0xFF, 0xFF,
-
-                             0x01, 0xFE, 0x0F, 0xBB, 0xBA, 0xA6, 0xC9, 0x89, 0x00, 0x00, //NFCID3t: Change this to desired value
-
-                             0x06, 0x46,  0x66, 0x6D, 0x01, 0x01, 0x10, 0x00
-                             };
-
-    if (type == SNEP_CLIENT)
-    {
-       for(uint8_t iter = 0;iter < 44;iter++)
-       {
-          pn532_packetbuffer[iter] = snep_client[iter];
-       }
-    }
-    else if (type == SNEP_SERVER)
-    {
-       for(uint8_t iter = 0;iter < 44;iter++)
-       {
-          pn532_packetbuffer[iter] = snep_server[iter];
-       }
-    }
 
     uint32_t result;
-    result = sendCommandCheckAck(pn532_packetbuffer, 44);
+    result = sendCommandCheckAck((uint8_t *)command, sizeof(command));
 
     if (IS_ERROR(result))
     {
@@ -334,6 +303,39 @@ uint32_t PN532::targetRxData(uint8_t *DataIn)
     if (response->data[0] == 0x00)
     {
        uint32_t ret_len = response->data_len - 1;
+       memcpy(DataIn, &(response->data[1]), ret_len);
+       return ret_len;
+    }
+
+    return (GEN_ERROR | response->data[0]);
+}
+
+uint32_t PN532::targetRxData(uint8_t *DataIn, uint32_t DataSize)
+{
+    ///////////////////////////////////// Receiving from Initiator ///////////////////////////
+    pn532_packetbuffer[0] = PN532_TGGETDATA;
+    uint32_t result = sendCommandCheckAck(pn532_packetbuffer, 1, 1000);
+    if (IS_ERROR(result)) {
+        //Serial.println(F("SendCommandCheck Ack Failed"));
+        return NFC_READER_COMMAND_FAILURE;
+    }
+
+    // read data packet
+    PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *) pn532_packetbuffer;
+
+    result = readspicommand(PN532_TGGETDATA, response);
+
+    if (IS_ERROR(result))
+    {
+       return NFC_READER_RESPONSE_FAILURE;
+    }
+
+    if (response->data[0] == 0x00)
+    {
+       uint32_t ret_len = response->data_len - 1;
+       if (ret_len > DataSize) {
+           ret_len = DataSize;
+       }
        memcpy(DataIn, &(response->data[1]), ret_len);
        return ret_len;
     }
@@ -600,21 +602,20 @@ uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response)
     do
     {
        response->header[0] = response->header[1];
-       delay(1);
+
        response->header[1] = spiread();
     } while (response->header[0] != 0x00 || response->header[1] != 0xFF);
 
-    delay(1);
+
     response->len = spiread();
 
-    delay(1);
+
     response->len_chksum = spiread();
 
-    delay(1);
+
     response->direction = spiread();
     calc_checksum += response->direction;
 
-    delay(1);
     response->responseCode = spiread();
 
     calc_checksum += response->responseCode;
@@ -629,12 +630,11 @@ uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response)
 
         for (uint8_t i = 0; i < response->data_len; ++i)
         {
-            delay(1);
+
             response->data[i] = spiread();
             calc_checksum +=  response->data[i];
          }
 
-         delay(1);
          ret_checksum = spiread();
 
          if (((uint8_t)(calc_checksum + ret_checksum)) != 0x00)
@@ -643,7 +643,6 @@ uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response)
             retVal = INVALID_CHECKSUM_RX;
          }
 
-         delay(1);
          uint8_t postamble = spiread();
 
 
@@ -673,7 +672,7 @@ void PN532::readspidata(uint8_t* buff, uint32_t n)
 
     for (uint8_t i=0; i<n; i++)
     {
-        delay(1);
+ //       delay(1);
         buff[i] = spiread();
 
         DMSG(' ');

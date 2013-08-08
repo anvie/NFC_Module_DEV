@@ -144,7 +144,7 @@ public:
                           uint32_t dataSize);
 
     uint32_t targetRxData(uint8_t *response);
-
+    uint32_t targetRxData(uint8_t *DataIn, uint32_t DataSize);
     boolean isTargetReleasedError(uint32_t result);
     
     boolean isReady(void);

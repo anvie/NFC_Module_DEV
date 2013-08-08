@@ -111,7 +111,6 @@ uint32_t NFCLinkLayer::closeSNEPClientLink()
  * ... SYMM repeat
  * <- CONN [LLCP_CONNECTING]
  * -> CC [LLCP_CONNECTED]
- * -> SYMM
  */
 
 uint32_t NFCLinkLayer::openSNEPServerLink(void)
@@ -224,14 +223,16 @@ uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data)
     }
    } while (1);
 
-   len = (uint8_t) result;
+   len = (uint8_t) result - 2;
+   
+   Data = &Data[3];
 
    // Acknowledge reciept of Information PDU
    ackPDU.setDSAP(recievedPDU->getSSAP());
    ackPDU.setPTYPE(RECEIVE_READY_TYPE);
    ackPDU.setSSAP(recievedPDU->getDSAP());
 
-   ackPDU.params.sequence = recievedPDU->params.sequence & 0x0F;
+   ackPDU.params.sequence = (recievedPDU->params.sequence  + 1)& 0x0F;
 
    result = _nfcReader->targetTxData((uint8_t *)&ackPDU, 3);
    if (IS_ERROR(result))
@@ -240,11 +241,42 @@ uint32_t NFCLinkLayer::serverLinkRxData(uint8_t *&Data)
 
       return result;
    }
+   
+   
+   // Receive SYMM PDU
+   uint8_t rwbuf[9];
+   _nfcReader->targetRxData(rwbuf, sizeof(rwbuf));
+   
+   // Send INFO PDU to confirm SNEP
+   rwbuf[0] = (recievedPDU->getSSAP() << 2) + 0x3;
+   rwbuf[1] = recievedPDU->getDSAP();
+   rwbuf[2] = 0x01;
+   rwbuf[3] = 0x10;
+   rwbuf[4] = 0x81;
+   rwbuf[5] = 0x00;
+   rwbuf[6] = 0x00;
+   rwbuf[7] = 0x00;
+   rwbuf[8] = 0x00;
+   _nfcReader->targetTxData(rwbuf, 9);
 
+   // Receive RR PDU
+   _nfcReader->targetRxData(rwbuf, sizeof(rwbuf));
+   
+   // Send SYMM PDU
+   rwbuf[0] = 0x00;
+   rwbuf[1] = 0x00;
+   _nfcReader->targetTxData(rwbuf, 2);
+   
+   // Receive DISC PDU
+   _nfcReader->targetRxData(rwbuf, sizeof(rwbuf));
+   
+   // Send DM PDU
+   rwbuf[0] = (recievedPDU->getSSAP() << 2) + 0x1;
+   rwbuf[1] = (0x1 << 6) + recievedPDU->getDSAP();
+   rwbuf[2] = 0x0;
+   _nfcReader->targetTxData(rwbuf, 3);
 
-   Data = &Data[3];
-
-   return len - 2;
+   return len;
 }
 
 uint32_t NFCLinkLayer::clientLinkTxData(uint8_t *snepMessage, uint32_t len)
