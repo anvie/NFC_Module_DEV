@@ -1,3 +1,4 @@
+#include <SPI.h>
 #include <PN532.h>
 #include <NFCLinkLayer.h>
 #include <SNEP.h>
@@ -6,12 +7,9 @@
 
 #include <NdefMessage.h>
 
-#define SCK 13
-#define MOSI 11
 #define SS 10
-#define MISO 12
 
-PN532 nfc(SCK, MISO, MOSI, SS);
+PN532 nfc(SS);
 NFCLinkLayer linkLayer(&nfc);
 SNEP snep(&linkLayer);
 
