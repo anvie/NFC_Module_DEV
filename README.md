@@ -1,11 +1,8 @@
-NFC Library for Arduino to communicate with Android
-===================================================
+# NFC Library for Arduino to communicate with Android
 
-This is an Arduino library using [NFC Shield](http://www.seeedstudio.com/depot/nfc-shield-v20-p-1370.html?cPath=19_24) from [Seeed Studio](http://seeedstudio.com) to exchange NDEF message with Android. Using protocols - LLCP and SNEP to get and put NDEF message.
+This library is developed by [SeeedStudio](https://github.com/Seeed-Shield/NFC_Shield_DEV). [Elechouse](http://elechouse.com) changes the driver from `Spi` to `Serial`, in order to support the [NFC Module](http://goo.gl/i0EQgd) of elechouse.
 
+## How To
 
-This library is based on 
-+ mbedded-PN532 - https://github.com/mweir/Embedded-PN532
-+ Ndef - https://github.com/don/Ndef
 
 

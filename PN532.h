@@ -16,6 +16,7 @@
 #define PN532_POSTAMBLE 0x00
 
 #define PN532_HOSTTOPN532 0xD4
+#define PN532_PN532TOHOST 0xD5
 
 #define PN532_FIRMWAREVERSION 0x02
 #define PN532_GETGENERALSTATUS 0x04
@@ -106,7 +107,7 @@ struct PN532_CMD_RESPONSE {
 
 class PN532 : public NFCReader {
 public:
-    PN532(uint8_t ss);
+    PN532(HardwareSerial &serial);
 
     uint32_t SAMConfig(void);
     void initializeReader();
@@ -147,21 +148,15 @@ public:
     uint32_t targetRxData(uint8_t *DataIn, uint32_t DataSize);
     boolean isTargetReleasedError(uint32_t result);
     
-    boolean isReady(void);
-
- uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse);
+    // boolean isReady(void);
+     uint32_t readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *reponse, uint16_t timeout=3000);
 
 private:
-    uint8_t _ss;
+    HardwareSerial* _serial;
+    uint8_t command;
+    void wakeup();
+    
 
-    boolean spi_readack();
-    uint8_t readspistatus(void);
-
-    void readspidata(uint8_t* buff, uint32_t n);
-    void spiwritecommand(uint8_t* cmd, uint8_t cmdlen);
-    void spiwrite(uint8_t c);
-    uint8_t spiread(void);
+    int8_t readAckFrame(uint16_t timeout = 1000);
+    int8_t receive(uint8_t *buf, int len, uint16_t timeout=1000);
 };
-
-
-
