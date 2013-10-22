@@ -1,22 +1,33 @@
 /**
- * This example demonstrates pushing a NDEF from Arduino + NFC Shield to Android 4.0+
+ * This example demonstrates pushing a NDEF message from Arduino + NFC Shield to Android 4.0+ device
  *
- * Note: to enable NFC Shield wake up Arduino, D2/INT0 need to be connected with IRQ.
+ * This demo does not support UNO, because UNO board has only one HardwareSerial.
+ * Do not try to use SoftwareSerial to control PN532, it won't work. 
+ * SotfwareSerial is not fast and stable enough.
+ * 
+ * This demo only supports the Arduino board which has at least 2 Serial, 
+ * Like Leonard(1 USB serial and 1 Hardware serial), Mega ect.
+ *
+ * Make sure your PN532 board is in HSU(High Speed Uart) mode.
+ *
+ * This demo is tested with Leonard.
  */
 
 
-#include <SPI.h>
 #include <PN532.h>
 #include <NFCLinkLayer.h>
 #include <SNEP.h>
-#include <avr/power.h>
-#include <avr/sleep.h>
 
 #include <NdefMessage.h>
 
-#define SS 10
-
-PN532 nfc(SS);
+/** Use hardware serial to control PN532 */
+// PN532                    Arduino
+// VCC            -->          5V
+// GND            -->         GND
+// RXD            -->      Serial1-TX
+// TXD            -->      Serail1-RX
+/** Serial1 can be  */
+PN532 nfc(Serial1);
 NFCLinkLayer linkLayer(&nfc);
 SNEP snep(&linkLayer);
 
@@ -28,119 +39,68 @@ uint8_t txNDEFMessage[MAX_PKT_HEADER_SIZE + MAX_PKT_PAYLOAD_SIZE];
 uint8_t *txNDEFMessagePtr; 
 uint8_t txLen;
 
-
-void phoneInRange()
-{
-  //sleep_disable(); // Prevents the arduino from going to sleep if it was about too. 
-}
-
 void setup(void) {
-    Serial.begin(115200);
-    Serial.println(F("----------------- nfc ndef push url --------------------"));
+  Serial.begin(115200);
+  while(!Serial);
+  Serial.println(F("----------------- nfc ndef push url --------------------"));
 
 
-    txNDEFMessagePtr = &txNDEFMessage[MAX_PKT_HEADER_SIZE];
-    NdefMessage message = NdefMessage();
-    message.addUriRecord("http://seeedstudio.com");
-    txLen = message.getEncodedSize();
-    if (txLen <= MAX_PKT_PAYLOAD_SIZE) {
-      message.encode(txNDEFMessagePtr);
-    } else {
-      Serial.println("Tx Buffer is too small.");
-      while (1) {
-      }
+  txNDEFMessagePtr = &txNDEFMessage[MAX_PKT_HEADER_SIZE];
+  NdefMessage message = NdefMessage();
+  message.addUriRecord("http://elechouse.com");
+  txLen = message.getEncodedSize();
+  if (txLen <= MAX_PKT_PAYLOAD_SIZE) {
+    message.encode(txNDEFMessagePtr);
+  } 
+  else {
+    Serial.println("Tx Buffer is too small.");
+    while (1) {
     }
-    
-    
-    nfc.initializeReader();
+  }
 
-    uint32_t versiondata = nfc.getFirmwareVersion();
-    if (! versiondata) {
-        Serial.print("Didn't find PN53x board");
-        while (1); // halt
-    }
-    // Got ok data, print it out!
-    Serial.print("Found chip PN5"); Serial.println((versiondata>>24) & 0xFF, HEX);
-    Serial.print("Firmware ver. "); Serial.print((versiondata>>16) & 0xFF, DEC);
-    Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
-    Serial.print("Supports "); Serial.println(versiondata & 0xFF, HEX);
+  nfc.initializeReader();
 
-#ifdef ENABLE_SLEEP    
-    // set power sleep mode
-    set_sleep_mode(SLEEP_MODE_ADC);
-    // interrupt to wake MCU
-    attachInterrupt(0, phoneInRange, FALLING);
-#endif
-    
-    nfc.SAMConfig();
+  uint32_t versiondata = nfc.getFirmwareVersion();
+  if (! versiondata) {
+    Serial.print("Didn't find PN53x board");
+    while (1); // halt
+  }
+  // Got ok data, print it out!
+  Serial.print("Found chip PN5"); 
+  Serial.println((versiondata>>24) & 0xFF, HEX);
+  Serial.print("Firmware ver. "); 
+  Serial.print((versiondata>>16) & 0xFF, DEC);
+  Serial.print('.'); 
+  Serial.println((versiondata>>8) & 0xFF, DEC);
+  Serial.print("Supports "); 
+  Serial.println(versiondata & 0xFF, HEX);
+
+  nfc.SAMConfig();
 }
 
 void loop(void) 
 {
-   Serial.println();
-   Serial.println(F("---------------- LOOP ----------------------"));
-   Serial.println();
+  Serial.println();
+  Serial.println(F("---------------- LOOP ----------------------"));
+  Serial.println();
 
+  uint32_t txResult = GEN_ERROR;
 
-    uint32_t txResult = GEN_ERROR;
-    
-#ifdef ENABLE_SLEEP
-     if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
-        sleepMCU();
-        
-        extern uint8_t pn532_packetbuffer[];
-        nfc.readspicommand(PN532_TGINITASTARGET, (PN532_CMD_RESPONSE *)pn532_packetbuffer);
-     }
-#else
-     if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
-        extern uint8_t pn532_packetbuffer[];
-        
-        while (!nfc.isReady()) {
-        }
-        nfc.readspicommand(PN532_TGINITASTARGET, (PN532_CMD_RESPONSE *)pn532_packetbuffer);
-      }
-#endif
-    
-    do {
-  
-        txResult = snep.pushPayload(txNDEFMessagePtr, txLen);
-   
+  if (IS_ERROR(nfc.configurePeerAsTarget(SNEP_SERVER))) {
+    extern uint8_t pn532_packetbuffer[];
 
-        Serial.print(F("Result: 0x"));
+    Serial.println(F("\nSNEP Sever:Blocking wait response."));
+    nfc.readspicommand(PN532_TGINITASTARGET, (PN532_CMD_RESPONSE *)pn532_packetbuffer, 0);
+  }
 
-        Serial.println(txResult, HEX);     
-     
-        delay(3000);   
-     } while(0);
-     
-     
+  txResult = snep.pushPayload(txNDEFMessagePtr, txLen);
+  Serial.print(F("Result: 0x"));
+  Serial.println(txResult, HEX);     
+  if(txResult == 0x00000001){
+    delay(3000); 
+  }
 }
 
-void sleepMCU()
-{
-    delay(100);  // delay so that debug message can be printed before the MCU goes to sleep
-    
-    // Enable sleep mode
-    sleep_enable();          
-    
-    power_adc_disable();
-    power_spi_disable();
-    power_timer0_disable();
-    power_timer1_disable();
-    power_timer2_disable();
-    power_twi_disable();
-    
-    // Puts the device to sleep.
-    sleep_mode();  
-    Serial.println("Woke up");          
-    
-    // Program continues execution HERE
-    // when an interrupt is recieved.
 
-    // Disable sleep mode
-    sleep_disable();         
-    
-    
-    power_all_enable();
-}   
-   
+
+
