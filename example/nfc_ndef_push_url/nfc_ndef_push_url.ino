@@ -14,7 +14,7 @@
  */
 
 
-#include <PN532.h>
+#include <PN5321.h>
 #include <NFCLinkLayer.h>
 #include <SNEP.h>
 

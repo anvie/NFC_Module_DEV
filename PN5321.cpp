@@ -4,7 +4,7 @@
 // authenticateBlock, readMemoryBlock, writeMemoryBlock contributed
 // by Seeed Technology Inc (www.seeedstudio.com)
 
-#include "PN532.h"
+#include "PN5321.h"
 
 #include "debug.h"
 
