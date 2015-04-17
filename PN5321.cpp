@@ -71,9 +71,11 @@ int8_t PN532::receive(uint8_t *buf, int len, uint16_t timeout)
         }
     }
     buf[read_bytes] = (uint8_t)ret;
+    DMSG(' ');
     DMSG_HEX(ret);
     read_bytes++;
   }
+  DMSG('\n');
   return read_bytes;
 }
 
@@ -140,12 +142,17 @@ uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response,  u
 {
     uint8_t tmp[3];
     
-    DMSG("Read response: ");
     
     /** Frame Preamble and Start Code */
     if(receive(tmp, 3, timeout)<=0){
+        //MSGERROR("readspicommand 0x");
+        //MSGPRINT_HEX(cmdCode);
+        //MSGPRINT(" receive (1): SEND_COMMAND_RX_TIMEOUT_ERROR\n");
         return SEND_COMMAND_RX_TIMEOUT_ERROR;
     }
+    
+    DMSG("Read response of ");DMSG_HEX(cmdCode);DMSG(" :");
+    
     if(0 != tmp[0] || 0!= tmp[1] || 0xFF != tmp[2]){
         DMSG("Preamble error");
         return INVALID_RESPONSE;
@@ -170,10 +177,15 @@ uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response,  u
     /** receive command byte */
     uint8_t cmd = cmdCode+1;               // response command
     if(receive(tmp, 2, timeout) <= 0){
+        MSGERROR("readspicommand receive (2): SEND_COMMAND_RX_TIMEOUT_ERROR");
         return SEND_COMMAND_RX_TIMEOUT_ERROR;
     }
     if( PN532_PN532TOHOST != tmp[0] || cmd != tmp[1]){
-        DMSG("Command error");
+        MSGERROR("Command error, cmd code expected: ");
+        MSGPRINT_HEX(cmd);
+        MSGPRINT(" got: ");
+        MSGPRINT_HEX(tmp[1]);
+        MSGPRINT("\n");
         return INVALID_RESPONSE;
     }
     response->direction = tmp[0];
@@ -189,6 +201,7 @@ uint32_t PN532::readspicommand(uint8_t cmdCode, PN532_CMD_RESPONSE *response,  u
     
     /** checksum and postamble */
     if(receive(tmp, 2, timeout) <= 0){
+        MSGERROR("readspicommand receive (3): SEND_COMMAND_RX_TIMEOUT_ERROR");
         return SEND_COMMAND_RX_TIMEOUT_ERROR;
     }
     if( 0 != (uint8_t)(sum + tmp[0]) || 0 != tmp[1] ){
@@ -241,7 +254,7 @@ uint32_t PN532::SAMConfig(void)
 {
     pn532_packetbuffer[0] = PN532_SAMCONFIGURATION;
     pn532_packetbuffer[1] = 0x01; // normal mode;
-    pn532_packetbuffer[2] = 0x14; // timeout 50ms * 20 = 1 second
+    pn532_packetbuffer[2] = 0xFF; // timeout 50ms * 20 = 1 second
     pn532_packetbuffer[3] = 0x01; // use IRQ pin!
 
     uint32_t result = sendCommandCheckAck(pn532_packetbuffer, 4);
@@ -336,10 +349,10 @@ uint32_t PN532::initiatorTxRxData(uint8_t *DataOut,
     return RESULT_SUCCESS; //No error
 }
 
-uint32_t PN532::configurePeerAsTarget(uint8_t type)
+uint32_t PN532::configurePeerAsTarget(uint8_t mode)
 {
     static const uint8_t command[] =      { PN532_TGINITASTARGET,
-            0,
+            mode,
             0x00, 0x00,         //SENS_RES
             0x00, 0x00, 0x00,   //NFCID1
             0x40,               //SEL_RES
@@ -392,6 +405,9 @@ uint32_t PN532::targetRxData(uint8_t *DataIn)
     uint32_t result = sendCommandCheckAck(pn532_packetbuffer, 1, 1000);
     if (IS_ERROR(result)) {
         //Serial.println(F("SendCommandCheck Ack Failed"));
+        DMSG("targetRxData error, sendCommandCheckAck got: ");
+        DMSG(result);
+        DMSG("\n");
         return NFC_READER_COMMAND_FAILURE;
     }
 
@@ -402,6 +418,9 @@ uint32_t PN532::targetRxData(uint8_t *DataIn)
 
     if (IS_ERROR(result))
     {
+        DMSG("targetRxData error, readspicommand got: ");
+        DMSG_HEX(result);
+        DMSG("\n");
        return NFC_READER_RESPONSE_FAILURE;
     }
 
@@ -411,6 +430,10 @@ uint32_t PN532::targetRxData(uint8_t *DataIn)
        memcpy(DataIn, &(response->data[1]), ret_len);
        return ret_len;
     }
+    
+    #if IS_DEBUG
+    response->printResponse();
+    #endif
 
     return (GEN_ERROR | response->data[0]);
 }
@@ -622,11 +645,11 @@ uint32_t PN532::readPassiveTargetID(uint8_t cardbaudrate)
 
     // read data packet
     PN532_CMD_RESPONSE *response = (PN532_CMD_RESPONSE *) pn532_packetbuffer;
-    if (IS_ERROR(readspicommand(PN532_INDATAEXCHANGE, response)))
+    if (IS_ERROR(readspicommand(PN532_INLISTPASSIVETARGET, response)))
     {
        return 0;
     }
-
+    
     // check some basic stuff
     Serial.print(F("Found "));
     Serial.print(response->data[2], DEC);

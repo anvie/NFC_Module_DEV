@@ -26,7 +26,7 @@ enum RESULTS
    CONNECT_COMPLETE_TX_FAILURE,
    UNEXPECTED_PDU_FAILURE,
    NDEF_MESSAGE_RX_FAILURE,
-   NDEF_MESSAGE_TX_FAILURE,
+   NDEF_MESSAGE_TX_FAILURE, // 0x0A
    SNEP_UNSUPPORTED_VERSION,
    SNEP_INVALID_NUM_ENTRIES,
    SNEP_INVALID_ACTION_CODE,
@@ -85,6 +85,49 @@ public:
 
    virtual boolean isTargetReleasedError(uint32_t result) = 0;
 
+   static char* errorString(uint32_t code){
+       switch (code){
+           case GEN_ERROR: return "GEN_ERROR";
+           case CONNECT_RX_FAILURE: return "CONNECT_RX_FAILURE";
+           case CONNECT_TX_FAILURE: return "CONNECT_TX_FAILURE";
+           case CONNECT_COMPLETE_RX_FAILURE: return "CONNECT_COMPLETE_RX_FAILURE";
+           case CONNECT_COMPLETE_TX_FAILURE: return "CONNECT_COMPLETE_TX_FAILURE";
+           case UNEXPECTED_PDU_FAILURE: return "UNEXPECTED_PDU_FAILURE";
+           case NDEF_MESSAGE_RX_FAILURE: return "NDEF_MESSAGE_RX_FAILURE";
+           case NDEF_MESSAGE_TX_FAILURE: return "NDEF_MESSAGE_TX_FAILURE";
+           case SNEP_UNSUPPORTED_VERSION: return "SNEP_UNSUPPORTED_VERSION";
+           /*GEN_ERROR = 0x80000000,
+              CONFIGURE_HARDWARE_ERROR,
+              NFC_READER_COMMAND_FAILURE,
+              NFC_READER_RESPONSE_FAILURE,
+              CONNECT_RX_FAILURE,
+              CONNECT_TX_FAILURE,
+              CONNECT_COMPLETE_RX_FAILURE,
+              CONNECT_COMPLETE_TX_FAILURE,
+              UNEXPECTED_PDU_FAILURE,
+              NDEF_MESSAGE_RX_FAILURE,
+              NDEF_MESSAGE_TX_FAILURE,
+              SNEP_UNSUPPORTED_VERSION,
+              SNEP_INVALID_NUM_ENTRIES,
+              SNEP_INVALID_ACTION_CODE,
+              SEND_COMMAND_TX_TIMEOUT_ERROR,
+              SEND_COMMAND_RX_ACK_ERROR,
+              SEND_COMMAND_RX_TIMEOUT_ERROR,
+              INVALID_CHECKSUM_RX,
+              INVALID_RESPONSE,
+              INVALID_POSTAMBLE,
+              CLIENT_REQ_ERROR
+            */
+              case SNEP_INVALID_ACTION_CODE: return "SNEP_INVALID_ACTION_CODE";
+            case CONFIGURE_HARDWARE_ERROR: return "CONFIGURE_HARDWARE_ERROR";
+            case NFC_READER_COMMAND_FAILURE: return "NFC_READER_COMMAND_FAILURE";
+            case INVALID_CHECKSUM_RX: return "INVALID_CHECKSUM_RX";
+            case INVALID_RESPONSE: return "INVALID_RESPONSE";
+            case INVALID_POSTAMBLE: return "INVALID_POSTAMBLE";
+            case CLIENT_REQ_ERROR: return "CLIENT_REQ_ERROR";
+       }
+       return "UNKNOWN";
+   }
 };
 
 

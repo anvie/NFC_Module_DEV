@@ -41,6 +41,7 @@ uint32_t NFCLinkLayer::openSNEPClientLink(void)
        return result;
    }
    
+   
    recievedPDU = ( PDU *) DataIn;
    uint32_t rx_result = _nfcReader->targetRxData(DataIn);
    if (IS_ERROR(rx_result))
